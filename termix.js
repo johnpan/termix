@@ -310,6 +310,8 @@ const
     },
     findCommandObj = (previousCommand, commandsArr) => {
         const seekCommandResponse = findCommand(previousCommand, commandsArr);
+        if (seekCommandResponse.index===-1) return {};
+
         const commandObj = commandsArr[seekCommandResponse.index];
         return commandObj;
     },
@@ -491,7 +493,7 @@ const
         const isSpecial = word0.charAt(0)==='/';
         const seekArr = isSpecial ? specialCommands:commands; 
         const seekCommandResponse = findCommand(word0, seekArr);
-        if (seekCommandResponse.index===-1) {                
+        if (seekCommandResponse.index===-1) {
             log(0, `'${word0}': ${isSpecial?'special ':''}command not found. ${isSpecial?'':'Previous & default commands not available.'}`);
             return;              
         }
@@ -518,7 +520,10 @@ const
             }
             return;
         }
-        // ready to run the command           
+        // ready to run the command
+        execute(commandObj, dataObj, seekArr, isSpecial, seekCommandResponse.index);
+    },
+    execute = (commandObj, dataObj, commandArr, isSpecial, commandIndex) => {          
         let methodOutput = "";
         if (isSpecial) {
             // if there are params, look for settingsMapper, else, run method
@@ -546,15 +551,15 @@ const
             // store as previous command
             previousCommand = commandObj.command;
             // keep dataObj in command's lastData
-            seekArr[seekCommandResponse.index].lastData = dataObj;
+            commandArr[commandIndex].lastData = dataObj;
         }
         // log details
         log(3, `command:${commandObj.command} dataObj:${JSON.stringify(dataObj, cautiousStringifier)}`);
         // show the response if any
         if (methodOutput) {
             log(1, `'${commandObj.command}': ${JSON.stringify(methodOutput)}`);
-        }           
-    },
+        }          
+    }
     ui = (where) => {
         // try for element id if id/class symbols missing
         if (!where.startsWith("#")&&!where.startsWith(".")) where = "#"+where;
