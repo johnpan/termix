@@ -10,8 +10,6 @@
  * To check what would be parsed, add '-help' or 'help' according to the syntax you use at the eol
  */
 let
-    inputElem = {},
-    outputElem = {},
     cmdElem = {},
     previousCommand = '',
     _history = [],
@@ -291,11 +289,7 @@ let
 ;
 
 const
-    termix_version = "0.0.1",        
-    templateHTML_old = `
-    <textarea readonly="" id="termix_output" style="width:95%;height:90px;background-color:gold;color:olive;border:none;padding: 1%;font: 16px/30px consolas;">Output</textarea>
-    <br/>&gt;<input id="termix_input" placeholder="ready" style="caret-color: red;font: 16px consolas;width: 95%;background-color: black;color: white;border: 0;" size="22">
-    `,
+    termix_version = "0.0.2",
     templateHTML = `
     <textarea id="termix" style="caret-color:red;width:100%;height:150px;background-color:black;color:olive;border:none;padding:1%;font:16px/30px consolas;">Output&#10;</textarea>
     `,
@@ -464,31 +458,17 @@ const
         return !!str && !!str.trim();
     },
     setOutput = (txt, append=true) => {
-        let preText = "";
-        if (deadSimpleUI) {
-            preText = append ? cmdElem.value : "";
-            cmdElem.value = preText + txt;
-            cmdElem.scrollTop = cmdElem.scrollHeight;
-        } else {
-            preText = append ? outputElem.textContent : "";
-            outputElem.textContent = preText + txt;
-            outputElem.scrollTop = outputElem.scrollHeight;
-        }
+        let preText = "";       
+        preText = append ? cmdElem.value : "";
+        cmdElem.value = preText + txt;
+        cmdElem.scrollTop = cmdElem.scrollHeight;        
     },
     setInput = (txt) => {
-        if (deadSimpleUI) {
-            const restText = cmdElem.value.substr(0, cmdElem.value.lastIndexOf("\n")+1);
-            cmdElem.value = restText + txt;
-        } else {
-            inputElem.value = txt;
-        } 
+        const restText = cmdElem.value.substr(0, cmdElem.value.lastIndexOf("\n")+1);
+        cmdElem.value = restText + txt;       
     },
     getInput = () => {
-        if (deadSimpleUI) {
-            return cmdElem.value.substr(cmdElem.value.lastIndexOf("\n")+1)
-        } else {
-            return inputElem.value;
-        } 
+        cmdElem.value.substr(cmdElem.value.lastIndexOf("\n")+1);      
     },
     parseLine = () => {
         const dataLine = getInput();
@@ -574,8 +554,7 @@ const
             log(1, `'${commandObj.command}': ${JSON.stringify(methodOutput)}`);
         }           
     },
-    ui = (where, beSafe = false) => {
-        deadSimpleUI = !beSafe;
+    ui = (where) => {
         // try for element id if id/class symbols missing
         if (!where.startsWith("#")&&!where.startsWith(".")) where = "#"+where;
         const el = document.querySelector(where);
@@ -584,13 +563,11 @@ const
             return;
         }            
         // append a text input in html and a textArea for logs
-        el.outerHTML += deadSimpleUI ? templateHTML : templateHTML_old;
+        el.outerHTML += templateHTML;
         // fork html elements
-        outputElem = document.querySelector("#termix_output");
-        inputElem = document.querySelector('#termix_input');
         cmdElem = document.querySelector('#termix');
         // fix according to beSafe flag
-        const listenerElem = deadSimpleUI ? cmdElem : inputElem;
+        const listenerElem = cmdElem;
         // now the input element is in DOM. Add event listener
         listenerElem.addEventListener('keydown', function (e) {
             const _key = e.which || e.keyCode;
