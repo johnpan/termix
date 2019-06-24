@@ -1,8 +1,8 @@
 (function (window, termix) {
     // console.log('termix', termix);
     if (termix) {
-        console.log ('termix already exists');
-        return; 
+        console.log ('termix already loaded');
+        // return; // allow it for faster debug
     }
 /**
  * termix - Terminal Expirience
@@ -11,7 +11,7 @@
  * With this util the command can remember its parameters from previous command until gets changed
  * To check what would be parsed, add '-help' or 'help' according to the syntax you use at the eol
  */
-let
+let    
     cmdElem = {},
     previousCommand = '',
     _history = [],
@@ -525,7 +525,7 @@ const
         // ready to run the command
         execute(commandObj, dataObj, seekArr, isSpecial, seekCommandResponse.index);
     },
-    execute = (commandObj, dataObj, commandArr, isSpecial, commandIndex) => {          
+    execute = (commandObj, dataObj, commandArr, isSpecial, commandIndex) => {
         let methodOutput = "";
         if (isSpecial) {
             // if there are params, look for settingsMapper, else, run method
@@ -563,6 +563,10 @@ const
         }          
     }
     ui = (where) => {
+        if (window.termix_hasBeenInit) {
+            say('termix initialized already');
+            return;
+        }
         // try for element id if id/class symbols missing
         if (!where.startsWith("#")&&!where.startsWith(".")) where = "#"+where;
         const el = document.querySelector(where);
@@ -591,15 +595,14 @@ const
                 e.preventDefault();
             }
         });
-        // remove init from exposed obj ? //todo 
-        // termix.init = () => say('termix initialized already');
+        window.termix_hasBeenInit = true;
     }
 ; 
 
 termix = {
     init : ui,
     version: function () { 
-        console.log("Hello, termix ver is" + termix_version); 
+        console.log("Hello, termix ver is " + termix_version); 
     }
 }
 
@@ -609,7 +612,5 @@ window.termix = termix;
 }(window, window.termix));	
 
 
-
-termix.init(".homeCarouselContainer");
 termix.init(".container");
 
