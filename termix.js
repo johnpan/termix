@@ -1,5 +1,5 @@
 (function (window, termix) {
-    console.log('termix', termix);
+    // console.log('termix', termix);
     if (termix) return 'termix already exists';
 
 /**
@@ -15,7 +15,7 @@ let
     _history = [],
     historyPointer = -1,
     logLevel = 1,
-    autoEnter = 1,
+    autoEnter = 0,
     deadSimpleUI = true,
     commands = [
         {
@@ -78,13 +78,13 @@ let
                 2: log level 1 & command line per enter hit
                 3: log level 2 & parsed data per enter hit
             -auto-enter [0|1]: if set, just hitting enter will run default command with its cached params
+            -verification [0|1]: if set, termix will show dataObj to be executed and ask a verification enter
             `,
             settingsMapper : [
                 {
                     param: 'merge-policy',
                     action: (paramValue) => {       
-                        const seekCommandResponse = findCommand(previousCommand, commands);
-                        const commandObj = commands[seekCommandResponse.index];
+                        const commandObj = findCommandObj(previousCommand, commands);
                         commandObj.mergePolicy = Number(paramValue);
                         log(1, `merge-policy changed for command: ${previousCommand}`);
                     }
@@ -102,7 +102,15 @@ let
                         autoEnter = Number(paramValue);
                         log(1, 'auto-enter changed to '+paramValue);
                     }
-                }
+                },
+                {
+                    param: 'verification',
+                    action: (paramValue) => {       
+                        const commandObj = findCommandObj(previousCommand, commands);
+                        commandObj.askVerification = Number(paramValue);
+                        log(1, `verification option changed for command: ${previousCommand}`);
+                    }
+                },
             ]                   
         },
         {
@@ -126,8 +134,7 @@ let
                 {
                     param: 'data',
                     action: () => {
-                        const seekCommandResponse = findCommand(previousCommand, commands);
-                        const commandObj = commands[seekCommandResponse.index];
+                        const commandObj = findCommandObj(previousCommand, commands);
                         commandObj.lastData = {};
                         log(1, `cached params cleared for command: ${previousCommand}`);
                     }
@@ -160,17 +167,6 @@ let
             commandKey: '/import',
             method: (dataObj) => {
                 // todo: imports a new command in commands array
-            }
-        },
-        {
-            command: '/redo',
-            commandKey: '/r',
-            help: `/r(/redo) runs the previous command again. Uses previousCommand and command's lastData`,
-            method: () => {
-                //todo: not needed, we have history
-                const seekCommandResponse = findCommand(previousCommand, commands);
-                const commandObj = commands[seekCommandResponse.index];
-                return commandObj.method(commandObj.lastData);
             }
         },
         {
@@ -311,6 +307,11 @@ const
             index: commandIndex,
             wasCommand: wasCommand
         }
+    },
+    findCommandObj = (previousCommand, commandsArr) => {
+        const seekCommandResponse = findCommand(previousCommand, commandsArr);
+        const commandObj = commandsArr[seekCommandResponse.index];
+        return commandObj;
     },
     createDataObj = (commandObj, paramsLine) => {
         /*            
@@ -583,6 +584,8 @@ const
                 e.preventDefault();
             }
         });
+        // remove init from exposed obj ? //todo 
+        // termix.init = () => say('termix initialized already');
     }
 ; 
 
