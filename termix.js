@@ -432,6 +432,20 @@ const
             }
         }, true);
     },
+    setListener = (e) => {
+        const _key = e.which || e.keyCode;
+        if (_key === 13) {      // Enter
+            parseLine();
+        }
+        else if (_key === 38) { // Up                    
+            historyNavigate(1);
+            e.preventDefault();
+        }
+        else if (_key === 40) { // Down
+            historyNavigate(-1);
+            e.preventDefault();
+        }
+    },
     historyNavigate = (factor) => {
         if (historyPointer<=0 && factor===-1) {
             // pressed 'down' until first entry
@@ -595,20 +609,7 @@ const
         // fork html elements
         cmdElem = document.querySelector('#termix');
         // now the input element is in DOM. Add event listener
-        cmdElem.addEventListener('keydown', function (e) {
-            const _key = e.which || e.keyCode;
-            if (_key === 13) {      // Enter
-                parseLine();
-            }
-            else if (_key === 38) { // Up                    
-                historyNavigate(1);
-                e.preventDefault();
-            }
-            else if (_key === 40) { // Down
-                historyNavigate(-1);
-                e.preventDefault();
-            }
-        });
+        cmdElem.addEventListener('keydown', setListener);
         window.termix_hasBeenInit = true;
     }
 ; 
