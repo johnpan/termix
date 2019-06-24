@@ -31,7 +31,7 @@ let
             lastData: {},
             help: ``, 
             mergePolicy: 0,
-            askVerification: false
+            askVerification: 1
         },
         {
             command: 'insert',
@@ -43,7 +43,7 @@ let
             lastData: {}, 
             help: `help about insert command`,               
             mergePolicy: 0,
-            askVerification: true
+            askVerification: 0
         },
         {
             command: 'bulk',
@@ -60,14 +60,14 @@ let
             lastData: {}, 
             help: `sample on how default params work`,               
             mergePolicy: 0,
-            askVerification: false
+            askVerification: 1
         }
     ],
     specialCommands = [
         {
             command: '/options',
             commandKey: '/opts',
-            help: `syntax: /opts(/options) -merge-policy [number] -log-level [number] -auto-enter [number]
+            help: `syntax: /opts(/options) -merge-policy [number] -log-level [number] -auto-enter [0|1] -verification [0|1]
             -merge-policy [0-3]: changes the mergePolicy for last used command. 
                 0: default, merge all,
                 1: ignore defaults, merge lastData 
@@ -158,14 +158,15 @@ let
         {
             command: '/clone',
             commandKey: '/cp',
+            help: `clones a command and gives it a new name`,
             method: (dataObj) => {
-                // clones a command and gives it a new name
                 // this way the user will have a second lastData obj to use
             }
         },
         {
             command: '/import',
             commandKey: '/import',
+            help: `imports custom commands`,
             method: (dataObj) => {
                 // todo: imports a new command in commands array
             }
@@ -173,12 +174,14 @@ let
         {
             command: '/history',
             commandKey: '/history',
+            help: `logs the history`,
             method: () => {
                 log(0, _history);
             }
         },
         {
-            command: '/eval',
+            command: '/eval',            
+            help: `runs pure js`,
             commandKey: '/e',
             method: () => {
                 // todo
@@ -187,6 +190,7 @@ let
         {
             command: '/get',
             commandKey: '/get',
+            help: `sends a GET request`,
             method: () => {
                 // todo ajax get
             }
@@ -194,6 +198,7 @@ let
         {
             command: '/post',
             commandKey: '/post',
+            help: `sends a POST request`,
             method: () => {
                 // todo ajax post
             }
@@ -201,13 +206,23 @@ let
         {
             command: '/watch',
             commandKey: '/w',
+            help: `logs all xhr requests`,
             method: () => {
                 // todo requests watcher
             }
         },
         {
+            command: '/watchdog',
+            commandKey: '/wd',
+            help: `runs a method per second`,
+            method: () => {
+                // todo watcher per second run method
+            }
+        },
+        {
             command: '/storage',
             commandKey: '/s',
+            help: `gets, sets, and removes from LocalStorage`,
             method: () => {
                 // todo local storage get, set, remove
             }
@@ -215,44 +230,29 @@ let
         {
             command: '/load',
             commandKey: '/l',
+            help: `loads js script. Use its URL or short name (jquery, moment)`,
             method: () => {
                 // todo: laod scripts
                 /*  jquery: https://code.jquery.com/jquery.min.js
-                    underscore: https://cdn.jsdelivr.net/underscorejs/latest/underscore-min.js
-                    lodash: https://cdn.jsdelivr.net/lodash/latest/lodash.min.js
                     moment: https://cdn.jsdelivr.net/momentjs/latest/moment.min.js
-                    datefns: https://cdn.jsdelivr.net/gh/date-fns/date-fns/dist/date_fns.min.js
                     binance: -custom termix commands for binance
                 */
            }
         },
         {
-            command: '/command',
-            commandKey: '/command',
+            command: '/cached',
+            commandKey: '/cached',
+            help: `shows last command and its cached data`,
             method: () => {
                 log(0, `Cached command: ${previousCommand}`);
-            }
-        },
-        {
-            command: '/ui',
-            commandKey: '/ui',
-            settingsMapper : [
-                {
-                    param: 'soft',
-                    action: () => {
-                        // hide the appended HTML
-                        log(1, "should hide the ui");
-                        document.querySelector(".termix").style.display = 'none';
-                    }
-                },
-            ],
-            method: () => {
-                log(1, "todo: ui related functions: hide output box (logs), change colors, ..");
+                const commandObj = findCommandObj(previousCommand, commands);
+                log(0, `...with last data: ${JSON.stringify(commandObj.lastData)}`);
             }
         },
         {
             command: '/cls',
             commandKey: '/cls',
+            help: `clears the terminal`,
             method: () => {
                 setOutput("Output", false);
             }
@@ -260,13 +260,15 @@ let
         {
             command: '/dialog',
             commandKey: '/question',
+            help: `runs a method with user's input after prompt msg`,
             method: () => {
                 //todo
             }
         },
         {
             command: '/exit',
-            commandKey: '/x',                
+            commandKey: '/x',  
+            help: `removes the terminal`,
             method: () => {
                 // kill the utility, 
                 // clear all data
@@ -279,7 +281,7 @@ let
             commandKey: '/h',
             method: () => {
                 // outputs a list of special commands
-                // todo: get help text from all special commands
+                // todo: get help text from all special commands, first line for each
             }
         }
     ]
