@@ -143,7 +143,7 @@ let
                 {
                     param: 'log',
                     action: (clearMsg) => {
-                        setOutput(clearMsg || "Output", false);
+                        setOutput(clearMsg || "Termix", false);
                     }
                 },
                 {
@@ -180,9 +180,9 @@ let
             }
         },
         {
-            command: '/eval',            
+            command: '/eval', 
+            commandKey: '/e',       
             help: `runs pure js`,
-            commandKey: '/e',
             method: () => {
                 // todo
             }
@@ -254,15 +254,15 @@ let
             commandKey: '/cls',
             help: `clears the terminal`,
             method: () => {
-                setOutput("Output", false);
+                setOutput("Termix", false);
             }
         },
         {
             command: '/dialog',
             commandKey: '/question',
             help: `runs a method with user's input after prompt msg`,
-            method: () => {
-                //todo
+            method: (promptMsg, _funct, _args) => {
+                return setDialog(promptMsg, _funct, _args);
             }
         },
         {
@@ -422,7 +422,17 @@ const
         }
         return mergedObj;
     },
-    historyNavigate = (factor) => {            
+    setDialog = (promptMsg, _funct, _args) => {
+        setOutput(promptMsg);
+        cmdElem.addEventListener('keydown', function (e) {
+            const _key = e.which || e.keyCode;
+            if (_key === 13) {
+                say("enter from dialog");
+                
+            }
+        }, true);
+    },
+    historyNavigate = (factor) => {
         if (historyPointer<=0 && factor===-1) {
             // pressed 'down' until first entry
             setInput("");
@@ -522,8 +532,14 @@ const
             }
             return;
         }
-        // ready to run the command
-        execute(commandObj, dataObj, seekArr, isSpecial, seekCommandResponse.index);
+        // check if should execute the command
+        if (!commandObj.askVerification) {
+             // ready to run the command
+            execute(commandObj, dataObj, seekArr, isSpecial, seekCommandResponse.index);
+        } else {
+            // to do using dialog
+            setDialog("tell me more about this ");
+        }
     },
     execute = (commandObj, dataObj, commandArr, isSpecial, commandIndex) => {
         let methodOutput = "";
@@ -578,12 +594,10 @@ const
         el.outerHTML += templateHTML;
         // fork html elements
         cmdElem = document.querySelector('#termix');
-        // fix according to beSafe flag
-        const listenerElem = cmdElem;
         // now the input element is in DOM. Add event listener
-        listenerElem.addEventListener('keydown', function (e) {
+        cmdElem.addEventListener('keydown', function (e) {
             const _key = e.which || e.keyCode;
-            if (_key === 13) {     // Enter
+            if (_key === 13) {      // Enter
                 parseLine();
             }
             else if (_key === 38) { // Up                    
