@@ -1,7 +1,9 @@
 (function (window, termix) {
     // console.log('termix', termix);
-    if (termix) return 'termix already exists';
-
+    if (termix) {
+        console.log ('termix already exists');
+        return; 
+    }
 /**
  * termix - Terminal Expirience
  * This is a UI-command-line utility to help typing the less keystrokes possible.
@@ -16,7 +18,6 @@ let
     historyPointer = -1,
     logLevel = 1,
     autoEnter = 0,
-    deadSimpleUI = true,
     commands = [
         {
             command: '',
@@ -287,7 +288,7 @@ let
 const
     termix_version = "0.0.2",
     templateHTML = `
-    <textarea id="termix" style="caret-color:red;width:100%;height:150px;background-color:black;color:olive;border:none;padding:1%;font:16px/30px consolas;">Output&#10;</textarea>
+    <textarea id="termix" style="caret-color:red;width:100%;height:150px;background-color:black;color:olive;border:none;padding:1%;font:16px/20px consolas;">Output&#10;</textarea>
     `,
     findCommand = (word0, seekArr) => {
         let wasCommand = true;
@@ -471,17 +472,16 @@ const
         cmdElem.value = restText + txt;       
     },
     getInput = () => {
-        cmdElem.value.substr(cmdElem.value.lastIndexOf("\n")+1);      
+        return cmdElem.value.substr(cmdElem.value.lastIndexOf("\n")+1);      
     },
     parseLine = () => {
         const dataLine = getInput();
-        // enter was hit, so, clear the input box 
-        if (!deadSimpleUI) setInput("");
         // if no text, do not keep in history
         if (dataLine.trim()) {
-            // keep line in History in zero index, set historyPointer to -1
-            historyPointer = -1;            
-            _history.unshift(dataLine);
+            // set historyPointer to -1
+            historyPointer = -1;
+            // keep line in History in zero index if not same as previous
+            if (_history[0] != dataLine) _history.unshift(dataLine);
         } else {
             // if settings allow it, just hitting enter will run default command with cached params
             if (autoEnter) return;
