@@ -226,7 +226,7 @@ let
             command: '/import',
             help: `imports custom commands`,
             method: (dataObj) => {
-                // todo: imports a new command in commands array
+                return importCommand(dataObj);
             }
         },
         {
@@ -318,7 +318,7 @@ let
             command: '/dialog',
             commandKey: '/question',
             help: `runs a method with user's input after prompt msg`,
-            method: (promptMsg, _funct, _args) => {
+            method: (promptMsgArr, _funct, _args) => {
                 //todo: setDialog(promptMsgArr, _funct, _args);
             }
         },
@@ -355,6 +355,17 @@ const
     templateHTML = `
     <textarea id="termix" style="caret-color:red;width:100%;height:150px;background-color:black;color:olive;border:none;padding:1%;font:16px/20px consolas;">Output&#10;</textarea>
     `,
+    commandModel = {
+        command: '',
+        commandKey: '',
+        method: (dataObj) => {return 'ready'},
+        defaults: {},
+        lastData: {},
+        help: ``, 
+        mergePolicy: 0,
+        askVerification: 1,
+        ignoreParse: 0
+    },
     findCommand = (word0, seekArr) => {
         let wasCommand = true;
         // seek in array
@@ -380,6 +391,10 @@ const
 
         const commandObj = commandsArr[seekCommandResponse.index];
         return commandObj;
+    },
+    importCommand = (obj) => {
+        // todo: ensure command and commandKey is not already in commands array
+        commands.push (Object.assign({}, commandModel, obj));
     },
     createDataObj = (commandObj, paramsLine) => {
         /*            
@@ -557,7 +572,7 @@ const
             if (_history[0] != dataLine) _history.unshift(dataLine);
         } else {
             // if settings allow it, just hitting enter will run default command with cached params
-            if (autoEnter) return;
+            if (!autoEnter) return;
         }
         // trim spaces & get the first word to check if it is a command
         const spaced = dataLine.trim().split(' ');
@@ -726,6 +741,8 @@ const
 
 termix = {
     init : ui,
+    commandModel: commandModel,
+    import: importCommand,
     version: function () { 
         console.log("Hello, termix ver is " + termix_version); 
     }
