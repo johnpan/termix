@@ -2,7 +2,7 @@
     // console.log('termix', termix);
     if (termix) {
         console.log ('termix already loaded');
-        // return; // allow it for faster debug
+        return; 
     }
 /**
  * termix - Terminal Expirience
@@ -36,6 +36,28 @@ let
             help: `default (unnamed) command. Better not be used`, 
             mergePolicy: 0,
             askVerification: 1
+        },
+        {            
+            command: 'maps',
+            commandKey: 'maps',
+            ignoreParse: 1,
+            method: (dataLine) => {
+                let transactionWindow = window.open(
+                    `https://www.google.com/maps/search/${dataLine}`, 
+                    'termixWindow'+(Math.random()+"").substr(-3)
+                );
+            }
+        },
+        {
+            command: 'google',
+            commandKey: 'g',
+            ignoreParse: 1,
+            method: (dataLine) => {
+                let transactionWindow = window.open(
+                    `https://www.google.com/search?q=${dataLine}`, 
+                    'termixWindow'+(Math.random()+"").substr(-3)
+                );
+            }
         },
         {
             command: 'insert',
@@ -86,6 +108,7 @@ let
             -auto-enter [0|1]: just hitting enter will run default command with its cached params
             -verification [0|1]: changes the verification policy for last used command. Termix will show dataObj to be executed and ask a verification enter
             -allow-eval [0|1]: allow special command /eval to run javascript
+            -ignore-parse [0|1]: send unparsed command line data
             `,
             settingsMapper : [
                 {
@@ -94,6 +117,14 @@ let
                         const commandObj = findCommandObj(previousCommand, commands);
                         commandObj.mergePolicy = Number(paramValue);
                         log(1, `merge-policy changed for command: ${previousCommand}`);
+                    }
+                },
+                {
+                    param: 'ignore-parse',
+                    action: (paramValue) => {       
+                        const commandObj = findCommandObj(previousCommand, commands);
+                        commandObj.ignoreParse = Number(paramValue);
+                        log(1, `ignore-parse changed for command: ${previousCommand}`);
                     }
                 },
                 {
@@ -132,7 +163,8 @@ let
                         log(0, `
                         Command: ${previousCommand} settings: 
                          merge-policy: ${commandObj.mergePolicy}
-                         verification: ${commandObj.askVerification}                        
+                         verification: ${commandObj.askVerification}   
+                         ignore-parse: ${commandObj.ignoreParse}                       
                         Global settings:
                          allow-eval: ${allowEval}
                          auto-enter: ${autoEnter}
@@ -252,6 +284,14 @@ let
             }
         },
         {
+            command: '/hide',
+            commandKey: '/hide',
+            help: `hides Termix. To show again, type 'termixShow()' in console`,
+            method: () => {
+                // todo 
+            }
+        },
+        {
             command: '/load',
             commandKey: '/l',
             help: `loads js script. Use its URL or short name (jquery, moment)`,
@@ -286,7 +326,7 @@ let
             commandKey: '/question',
             help: `runs a method with user's input after prompt msg`,
             method: (promptMsg, _funct, _args) => {
-                return setDialog(promptMsg, _funct, _args);
+                //todo: setDialog(promptMsgArr, _funct, _args);
             }
         },
         {
@@ -297,7 +337,7 @@ let
                 // kill the utility, 
                 // clear all data
                 // remove the appended HTML
-                log(1, "should kill the utility");
+                log(1, "should kill the utility (todo!)");
             }
         },
         {
@@ -503,6 +543,11 @@ const
     getInput = () => {
         return cmdElem.value.substr(cmdElem.value.lastIndexOf("\n")+1);      
     },
+    getUparsedLine = (dataLine) => {
+        const spaced = dataLine.trim().split(' ');
+        spaced.shift();
+        return spaced.join(' ');
+    },
     parseLine = () => {
         const dataLine = getInput();
         // if no text, do not keep in history
@@ -528,16 +573,15 @@ const
         }
         // remove first word if it was a command 
         const paramsLine = dataLine.split(" ").splice(seekCommandResponse.wasCommand).join(" "); 
-        // get the command object
         const commandObj = seekArr[seekCommandResponse.index];
+        const unparsedLine = getUparsedLine(dataLine);
         if (commandObj.command == '/eval') {
             // stop typical procedure and return eval
             if (allowEval) {
                 // remove /eval from data line and evaluate
-                spaced.shift(); 
                 let evalReturn = '';
                 try {
-                    evalReturn = runEval(spaced.join(' '));
+                    evalReturn = runEval(unparsedLine);
                 } catch (err) {
                     evalReturn = err.message;
                 }
@@ -549,7 +593,10 @@ const
             }
         }
         // create dataObj (plain object, not json) from params string
-        let dataObj = createDataObj(commandObj, paramsLine);
+        let dataObj = commandObj.ignoreParse ?
+            unparsedLine :        
+            createDataObj(commandObj, paramsLine)
+        ;
         if (dataObj.errMsg) {                
             log(0, `'${commandObj.command}': syntax error. ${dataObj.errMsg}`);
             return;              
