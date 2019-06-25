@@ -19,6 +19,7 @@ let
     unverifiedParseData = {},
     logLevel = 1,
     autoEnter = 0,
+    allowEval = 0,
     commands = [
         {
             command: '',
@@ -28,7 +29,9 @@ let
                 // default command
                 // custom code to run command operation
             },
-            defaults: {},
+            defaults: {
+                when: new Date().toJSON().slice(0,10)
+            },
             lastData: {},
             help: `default (unnamed) command. Better not be used`, 
             mergePolicy: 0,
@@ -43,7 +46,7 @@ let
             defaults: {},
             lastData: {}, 
             help: `help about insert command`,               
-            mergePolicy: 0,
+            mergePolicy: 1,
             askVerification: 0
         },
         {
@@ -60,7 +63,7 @@ let
             },
             lastData: {}, 
             help: `sample on how default params work`,               
-            mergePolicy: 0,
+            mergePolicy: 2,
             askVerification: 1
         }
     ],
@@ -69,6 +72,7 @@ let
             command: '/options',
             commandKey: '/opts',
             help: `syntax: /opts(/options) -merge-policy [number] -log-level [number] -auto-enter [0|1] -verification [0|1]
+            -show: shows all options for last used command
             -merge-policy [0-3]: changes the mergePolicy for last used command. 
                 0: default, merge all,
                 1: ignore defaults, merge lastData 
@@ -79,8 +83,9 @@ let
                 1: default. Log method's output & errors
                 2: log level 1 & command line per enter hit
                 3: log level 2 & parsed data per enter hit
-            -auto-enter [0|1]: if set, just hitting enter will run default command with its cached params
-            -verification [0|1]: if set, termix will show dataObj to be executed and ask a verification enter
+            -auto-enter [0|1]: just hitting enter will run default command with its cached params
+            -verification [0|1]: changes the verification policy for last used command. Termix will show dataObj to be executed and ask a verification enter
+            -allow-eval [0|1]: allow special command /eval to run javascript
             `,
             settingsMapper : [
                 {
@@ -111,6 +116,27 @@ let
                         const commandObj = findCommandObj(previousCommand, commands);
                         commandObj.askVerification = Number(paramValue);
                         log(1, `verification option changed for command: ${previousCommand}`);
+                    }
+                },
+                {
+                    param: 'allow-eval',
+                    action: (paramValue) => {
+                        allowEval = Number(paramValue);
+                        log(1, 'allow-eval changed to '+paramValue);
+                    }
+                },
+                {
+                    param: 'show',
+                    action: (paramValue) => {       
+                        const commandObj = findCommandObj(previousCommand, commands);
+                        log(0, `
+                        Command: ${previousCommand} settings: 
+                         merge-policy: ${commandObj.mergePolicy}
+                         verification: ${commandObj.askVerification}                        
+                        Global settings:
+                         allow-eval: ${allowEval}
+                         auto-enter: ${autoEnter}
+                         log-level: ${logLevel}    `);
                     }
                 },
             ]                   
@@ -183,10 +209,7 @@ let
         {
             command: '/eval', 
             commandKey: '/e',       
-            help: `runs pure js`,
-            method: () => {
-                // todo
-            }
+            help: `runs pure js`
         },
         {
             command: '/get',
@@ -457,6 +480,9 @@ const
     say = (...args) => {
         console.log(...args);
     },
+    runEval = (str) => {
+        return eval(str);
+    }
     cautiousStringifier = (k, v) => {
         // shows params even with undefined values
         return (v === undefined) ? '__undefined' : v;
@@ -504,9 +530,23 @@ const
         const paramsLine = dataLine.split(" ").splice(seekCommandResponse.wasCommand).join(" "); 
         // get the command object
         const commandObj = seekArr[seekCommandResponse.index];
-        if (seekCommandResponse.command == '/eval') {
+        if (commandObj.command == '/eval') {
             // stop typical procedure and return eval
-            // todo
+            if (allowEval) {
+                // remove /eval from data line and evaluate
+                spaced.shift(); 
+                let evalReturn = '';
+                try {
+                    evalReturn = runEval(spaced.join(' '));
+                } catch (err) {
+                    evalReturn = err.message;
+                }
+                log(0, evalReturn);
+                return;
+            } else {
+                log(0, `'allow-eval' setting is off. Use /opts to change it`);
+                return; 
+            }
         }
         // create dataObj (plain object, not json) from params string
         let dataObj = createDataObj(commandObj, paramsLine);
@@ -517,7 +557,7 @@ const
         // check if user asked help for the command
         if (Object.keys(dataObj).includes('help')) {
             log(0, `'${commandObj.command}' help: ${commandObj.help}`);
-            if (Object.keys(dataObj).length>0) {
+            if (Object.keys(dataObj).length>1) {
                 // show how command params would run if no '-help' was present
                 log(1, `'${commandObj.command}' params parsed: ${JSON.stringify(dataObj, cautiousStringifier)}`);
             }
@@ -589,7 +629,6 @@ const
         window.termix_hasBeenInit = true;
     },
     handleEnter = () => {
-        console.log('enter handle');
         parseData = parseLine();
         if (!parseData) return;
         const {commandObj, dataObj, seekArr, isSpecial, commandIndex} = parseData;        
@@ -619,7 +658,6 @@ const
     verifyListener = (e) => {
         const _key = e.which || e.keyCode;
         if (_key === 13) {
-            console.log('verify handle');
             const verifyLine = getInput().toLowerCase().trim().charAt(0);
             if (verifyLine == 'y') {
                 execute(...Object.values(unverifiedParseData));
