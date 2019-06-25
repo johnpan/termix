@@ -16,6 +16,7 @@ let
     previousCommand = '',
     _history = [],
     historyPointer = -1,
+    unverifiedParseData = {},
     logLevel = 1,
     autoEnter = 0,
     commands = [
@@ -29,7 +30,7 @@ let
             },
             defaults: {},
             lastData: {},
-            help: ``, 
+            help: `default (unnamed) command. Better not be used`, 
             mergePolicy: 0,
             askVerification: 1
         },
@@ -422,30 +423,6 @@ const
         }
         return mergedObj;
     },
-    setDialog = (promptMsg, _funct, _args) => {
-        setOutput(promptMsg);
-        cmdElem.addEventListener('keydown', function (e) {
-            const _key = e.which || e.keyCode;
-            if (_key === 13) {
-                say("enter from dialog");
-                
-            }
-        }, true);
-    },
-    setListener = (e) => {
-        const _key = e.which || e.keyCode;
-        if (_key === 13) {      // Enter
-            parseLine();
-        }
-        else if (_key === 38) { // Up                    
-            historyNavigate(1);
-            e.preventDefault();
-        }
-        else if (_key === 40) { // Down
-            historyNavigate(-1);
-            e.preventDefault();
-        }
-    },
     historyNavigate = (factor) => {
         if (historyPointer<=0 && factor===-1) {
             // pressed 'down' until first entry
@@ -546,14 +523,13 @@ const
             }
             return;
         }
-        // check if should execute the command
-        if (!commandObj.askVerification) {
-             // ready to run the command
-            execute(commandObj, dataObj, seekArr, isSpecial, seekCommandResponse.index);
-        } else {
-            // to do using dialog
-            setDialog("tell me more about this ");
-        }
+        return {
+            commandObj : commandObj,
+            dataObj : dataObj,
+            seekArr : seekArr,
+            isSpecial : isSpecial,
+            commandIndex : seekCommandResponse.index,
+        };        
     },
     execute = (commandObj, dataObj, commandArr, isSpecial, commandIndex) => {
         let methodOutput = "";
@@ -609,8 +585,58 @@ const
         // fork html elements
         cmdElem = document.querySelector('#termix');
         // now the input element is in DOM. Add event listener
-        cmdElem.addEventListener('keydown', setListener);
+        cmdElem.addEventListener('keydown', defaultListener);
         window.termix_hasBeenInit = true;
+    },
+    handleEnter = () => {
+        console.log('enter handle');
+        parseData = parseLine();
+        if (!parseData) return;
+        const {commandObj, dataObj, seekArr, isSpecial, commandIndex} = parseData;        
+        // check if should execute the command
+        if (!commandObj.askVerification) {
+             // ready to run the command
+            execute(commandObj, dataObj, seekArr, isSpecial, commandIndex);
+        } else {
+            log(1, `${commandObj.command} : ${JSON.stringify(dataObj, cautiousStringifier)}`);
+            setVerify("Are you sure? (y/n)", parseData);
+        }
+    },
+    defaultListener = (e) => {
+        const _key = e.which || e.keyCode;
+        if (_key === 13) {      // Enter
+            handleEnter();
+        }
+        else if (_key === 38) { // Up
+            historyNavigate(1);
+            e.preventDefault();
+        }
+        else if (_key === 40) { // Down
+            historyNavigate(-1);
+            e.preventDefault();
+        }
+    },
+    verifyListener = (e) => {
+        const _key = e.which || e.keyCode;
+        if (_key === 13) {
+            console.log('verify handle');
+            const verifyLine = getInput().toLowerCase().trim().charAt(0);
+            if (verifyLine == 'y') {
+                execute(...Object.values(unverifiedParseData));
+            } else {
+                log(0, 'command aborted');
+            }            
+            unverifiedParseData = {};
+            // restore ui listener
+            cmdElem.removeEventListener('keydown', verifyListener);
+            cmdElem.addEventListener('keydown', defaultListener);
+        }
+    },
+    setVerify = (promptMsg, parseData) => {
+        log(0, promptMsg);
+        unverifiedParseData = parseData;
+        cmdElem.removeEventListener('keydown', defaultListener);
+        cmdElem.addEventListener('keydown', verifyListener);
     }
 ; 
 
