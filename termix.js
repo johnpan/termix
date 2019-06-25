@@ -161,7 +161,7 @@ let
                     action: (paramValue) => {       
                         const commandObj = findCommandObj(previousCommand, commands);
                         log(0, `
-                        Command: ${previousCommand} settings: 
+                        Command: '${previousCommand}' settings: 
                          merge-policy: ${commandObj.mergePolicy}
                          verification: ${commandObj.askVerification}   
                          ignore-parse: ${commandObj.ignoreParse}                       
@@ -224,7 +224,6 @@ let
         },
         {
             command: '/import',
-            commandKey: '/import',
             help: `imports custom commands`,
             method: (dataObj) => {
                 // todo: imports a new command in commands array
@@ -232,7 +231,6 @@ let
         },
         {
             command: '/history',
-            commandKey: '/history',
             help: `logs the history`,
             method: () => {
                 log(0, _history);
@@ -245,7 +243,6 @@ let
         },
         {
             command: '/get',
-            commandKey: '/get',
             help: `sends a GET request`,
             method: () => {
                 // todo ajax get
@@ -253,7 +250,6 @@ let
         },
         {
             command: '/post',
-            commandKey: '/post',
             help: `sends a POST request`,
             method: () => {
                 // todo ajax post
@@ -285,7 +281,6 @@ let
         },
         {
             command: '/hide',
-            commandKey: '/hide',
             help: `hides Termix. To show again, type 'termixShow()' in console`,
             method: () => {
                 // todo 
@@ -305,7 +300,6 @@ let
         },
         {
             command: '/cached',
-            commandKey: '/cached',
             help: `shows last command and its cached data`,
             method: () => {
                 log(0, `Cached command: ${previousCommand}`);
@@ -315,7 +309,6 @@ let
         },
         {
             command: '/cls',
-            commandKey: '/cls',
             help: `clears the terminal`,
             method: () => {
                 setOutput("Termix", false);
@@ -338,6 +331,12 @@ let
                 // clear all data
                 // remove the appended HTML
                 log(1, "should kill the utility (todo!)");
+            }
+        },
+        {
+            command: '/commands',
+            method: () => {
+                log(1, "should show all custom commands (todo!)");
             }
         },
         {
