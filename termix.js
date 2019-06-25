@@ -393,8 +393,23 @@ const
         return commandObj;
     },
     importCommand = (obj) => {
-        // todo: ensure command and commandKey is not already in commands array
-        commands.push (Object.assign({}, commandModel, obj));
+        // ensure command and commandKey is not already in commands array
+        let commandFound = commands.findIndex( c => { 
+            return (
+                c.command === obj.command || c.commandKey === obj.command ||
+                c.command === obj.commandKey || c.commandKey === obj.commandKey 
+            )
+        });
+        if (commandFound > -1) {
+            return `FAIL: command ${obj.command}/${obj.commandKey} cannot be imported, another command uses these keys`
+        } else {
+
+            // to do: eval method or wrap with window...
+            // sample should work: /import -command myFirstCom -commandKey mfc -verification 1 -merge-policy 2 -method termix.log
+
+            commands.push (Object.assign({}, commandModel, obj));
+            return `success: command ${obj.command}/${obj.commandKey}`
+        }
     },
     createDataObj = (commandObj, paramsLine) => {
         /*            
@@ -743,6 +758,7 @@ termix = {
     init : ui,
     commandModel: commandModel,
     import: importCommand,
+    log: (what) => {log(0, what)},
     version: function () { 
         console.log("Hello, termix ver is " + termix_version); 
     }
