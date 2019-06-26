@@ -278,7 +278,7 @@ let
             help: `hides Termix. To show again, type 'termix.show()' in console`,
             method: () => {
                 cmdElem.style.display = 'none';
-                console.info('type termix.show() to bring Termic back');
+                console.info('type termix.show() to bring Termix back');
             }
         },
         {
@@ -322,10 +322,8 @@ let
             commandKey: '/x',  
             help: `removes the terminal`,
             method: () => {
-                // kill the utility, 
-                // clear all data
-                // remove the appended HTML
-                log(1, "should kill the utility (todo!)");
+                cmdElem.remove();
+                delete window.termix;
             }
         },
         {
@@ -340,6 +338,7 @@ let
             method: () => {
                 // outputs a list of special commands
                 // todo: get help text from all special commands, first line for each
+                log(1, "should show a list of special commands (todo!)");
             }
         }
     ]
@@ -679,10 +678,6 @@ const
         }          
     }
     ui = (where) => {
-        if (window.termix_hasBeenInit) {
-            say('termix initialized already');
-            return;
-        }
         // try for element id if id/class symbols missing
         if (!where.startsWith("#")&&!where.startsWith(".")) where = "#"+where;
         const el = document.querySelector(where);
@@ -696,7 +691,6 @@ const
         cmdElem = document.querySelector('#termix');
         // now the input element is in DOM. Add event listener
         cmdElem.addEventListener('keydown', defaultListener);
-        window.termix_hasBeenInit = true;
     },
     handleEnter = (dataLine) => {   
         parseData = parseLine(dataLine);
@@ -753,6 +747,7 @@ termix = {
     commandModel: commandModel,
     import: importCommand,
     run: handleEnter,
+    element: cmdElem,
     log: (what) => {log(0, what)},
     version: () => termix_version,
     show: () => {
