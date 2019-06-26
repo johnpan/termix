@@ -362,13 +362,19 @@ const
         ignoreParse: 0
     },
     domElementModel = { 
-        elemId: '',
+        selectCommand: '',
         termixId: '',
         domEl: null
     },
-    ensureElements = (elementIdsArr) => {
+    retrieveElement = (elemName) => {
+        //todo
+    },
+    ensureElements = (domElementsArr) => {
+        // input: array of domElementModel
         // ensure each DOM element exist by checking elemId
         // put element reference in as domEl and its name as termixId
+
+        //todo
     }, 
     findCommand = (word0, seekArr) => {
         let wasCommand = true;
@@ -760,9 +766,12 @@ const
 termix = {
     init : ui,
     commandModel: commandModel,
+    domElementModel: domElementModel,
+    ensureElements: ensureElements,
+    retrieveElement: retrieveElement,
     import: importCommand,
     run: handleEnter,
-    element: cmdElem,
+    cmd: cmdElem,
     log: (what) => {log(0, what)},
     version: () => termix_version,
     show: () => {
