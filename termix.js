@@ -20,6 +20,7 @@ let
     logLevel = 1,
     allowEval = 0,
     useLastCommand = 0,
+    elementsArr = [],
     commands = [
         {
             command: 'insert',
@@ -329,7 +330,7 @@ let
         {
             command: '/commands',
             method: () => {
-                log(1, "should show all custom commands (todo!)");
+                log(0, commands.map( c => c.command ));
             }
         },
         {
@@ -360,6 +361,15 @@ const
         askVerification: 1,
         ignoreParse: 0
     },
+    domElementModel = { 
+        elemId: '',
+        termixId: '',
+        domEl: null
+    },
+    ensureElements = (elementIdsArr) => {
+        // ensure each DOM element exist by checking elemId
+        // put element reference in as domEl and its name as termixId
+    }, 
     findCommand = (word0, seekArr) => {
         let wasCommand = true;
         // seek in array
@@ -390,8 +400,12 @@ const
         // ensure command and commandKey is not already in commands array
         let commandFound = commands.findIndex( c => { 
             return (
-                c.command === obj.command || c.commandKey === obj.command ||
-                c.command === obj.commandKey || c.commandKey === obj.commandKey 
+                c.command && (
+                    c.command === obj.command || c.command === obj.commandKey
+                ) ||
+                c.commandKey && (
+                    c.commandKey === obj.commandKey || c.commandKey === obj.command
+                )
             )
         });
         if (commandFound > -1) {
