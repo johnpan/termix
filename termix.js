@@ -20,11 +20,7 @@ let
     logLevel = 1,
     allowEval = 0,
     useLastCommand = 0,
-    domElements = [{
-        dynamicSelect: 'document.head',
-        domElement: document.head,
-        termixId: "termixPlaceholder"
-    }],
+    domElements = [],
     commands = [
         {
             command: 'insert',
@@ -381,10 +377,17 @@ const
         termixId: ''
     },
     retrieveElement = (elemName) => {
-        return domElements.find (el => el.termixId == elemName).domElement;
+        // ensure first! check if element exists, could have been removed. 
+        // Try again with dynamicSelect if not found
+        let _model = domElements.find (el => el.termixId == elemName),
+            _el = null;
+        if (_model) {
+            _el = _model.domElement ? _model.domElement : runEval(_model.dynamicSelect);
+        }
+        return _el;
     },
     importElement = (domElementObj) => {
-        if (domElementObj.domElement) {
+        if (domElementObj.domElement || domElementObj.dynamicSelect) {
             // do not push if termixId not unique
             if (pushObjectIfUniqueProp(domElements, domElementObj, 'termixId')) {
                 return `success: ${domElementObj.termixId}`; 
@@ -745,11 +748,16 @@ const
         } else {
             // if no param, look in domElements for the object named 'termixPlaceholder'
             el = retrieveElement('termixPlaceholder');
+            // if not found, use default placeholder
+            if (!el) { el = document.head; }
         }
         if (el == null) {
-            say('element id not found');
+            say('init failed');
             return;
-        }   
+        }
+        // remove if already somewhere
+        const prevPlaced = document.querySelector("#termix");
+        if (prevPlaced) { prevPlaced.remove(); }
         // append a text input in html and a textArea for logs
         el.outerHTML += templateHTML;
         // fork html elements
@@ -828,3 +836,5 @@ termix = {
 window.termix = termix;  
 
 }(window, window.termix));	
+
+// termix.init();
