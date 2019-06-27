@@ -21,7 +21,7 @@ let
     allowEval = 0,
     useLastCommand = 0,
     domElements = [{
-        domElement: document.querySelector(".editorHeader"),
+        domElement: document.head,
         termixId: "termixPlaceholder"
     }],
     commands = [
@@ -361,7 +361,7 @@ let
 const
     termix_version = "0.0.2",
     templateHTML = `
-    <textarea id="termix" style="caret-color:red;width:100%;height:150px;background-color:black;color:olive;border:none;padding:1%;font:16px/20px consolas;">Output&#10;</textarea>
+    <textarea id="termix" style="caret-color:red;width:100%;height:150px;background-color:black;color:olive;border:none;padding:1%;font:16px/20px consolas;">Termix&#10;</textarea>
     `,
     commandModel = {
         command: '',
@@ -826,6 +826,3 @@ termix = {
 window.termix = termix;  
 
 }(window, window.termix));	
-
-// termix.init(".container");
-
