@@ -20,7 +20,7 @@ let
     logLevel = 1,
     allowEval = 0,
     useLastCommand = 0,
-    elementsArr = [],
+    domElements = [],
     commands = [
         {
             command: 'insert',
@@ -215,13 +215,23 @@ let
             }
         },
         {
-            command: '/import',
-            help: `imports custom commands`,
+            command: '/import-command',
+            help: `imports custom command`,
             method: (dataObj) => {
                 // to do: eval method or wrap with window...
-                // sample should work: /import -command myFirstCom -commandKey mfc -verification 1 -merge-policy 2 -method termix.log
+                // sample should work: /import-command -command myFirstCom -commandKey mfc -verification 1 -merge-policy 2 -method termix.log
     
                 return importCommand(dataObj);
+            }
+        },
+        {
+            command: '/import-element',
+            help: `imports dom element`,
+            method: (dataObj) => {
+                // to do: eval method or wrap with window...
+                // sample should work: /import-element -selectCommand document.querySelectorAll(".ReactVirtualized__Table")[0] -elemName termixPlaceholder
+                       
+                return ensureElement(dataObj);
             }
         },
         {
@@ -362,19 +372,19 @@ const
         ignoreParse: 0
     },
     domElementModel = { 
-        selectCommand: '',
-        termixId: '',
-        domEl: null
+        domElement: null,
+        termixId: ''
     },
     retrieveElement = (elemName) => {
         //todo
     },
-    ensureElements = (domElementsArr) => {
-        // input: array of domElementModel
-        // ensure each DOM element exist by checking elemId
-        // put element reference in as domEl and its name as termixId
-
-        //todo
+    ensureElement = (domElementObj) => {
+        if (domElementObj.domElement) {
+            domElements.push(domElementObj);
+            return `success: ${domElementObj.termixId}`;            
+        } else {
+            return `FAIL: ${domElementObj.termixId}`;   
+        }
     }, 
     findCommand = (word0, seekArr) => {
         let wasCommand = true;
@@ -402,27 +412,27 @@ const
         const commandObj = commandsArr[seekCommandResponse.index];
         return commandObj;
     },
-    importCommand = (obj) => {
+    importCommand = (commandObj) => {
         // ensure command and commandKey is not already in commands array
         let commandFound = commands.findIndex( c => { 
             return (
                 c.command && (
-                    c.command === obj.command || c.command === obj.commandKey
+                    c.command === commandObj.command || c.command === commandObj.commandKey
                 ) ||
                 c.commandKey && (
-                    c.commandKey === obj.commandKey || c.commandKey === obj.command
+                    c.commandKey === commandObj.commandKey || c.commandKey === commandObj.command
                 )
             )
         });
         if (commandFound > -1) {
-            return `FAIL: command ${obj.command}/${obj.commandKey} cannot be imported, another command uses these keys`
+            return `FAIL: command ${commandObj.command}/${commandObj.commandKey} cannot be imported, another command uses these keys`
         } else {
 
             // to do: eval method or wrap with window...
             // sample should work: /import -command myFirstCom -commandKey mfc -verification 1 -merge-policy 2 -method termix.log
 
-            commands.push (Object.assign({}, commandModel, obj));
-            return `success: command ${obj.command}/${obj.commandKey}`
+            commands.push (Object.assign({}, commandModel, commandObj));
+            return `success: command ${commandObj.command}/${commandObj.commandKey}`
         }
     },
     createDataObj = (commandObj, paramsLine) => {
@@ -767,9 +777,9 @@ termix = {
     init : ui,
     commandModel: commandModel,
     domElementModel: domElementModel,
-    ensureElements: ensureElements,
     retrieveElement: retrieveElement,
-    import: importCommand,
+    importCommand: importCommand,
+    importElement: ensureElement,
     run: handleEnter,
     cmd: cmdElem,
     log: (what) => {log(0, what)},
