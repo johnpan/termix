@@ -21,6 +21,7 @@ let
     allowEval = 0,
     useLastCommand = 0,
     domElements = [{
+        dynamicSelect: 'document.head',
         domElement: document.head,
         termixId: "termixPlaceholder"
     }],
@@ -375,13 +376,14 @@ const
         ignoreParse: 0
     },
     domElementModel = { 
+        dynamicSelect: '',
         domElement: null,
         termixId: ''
     },
     retrieveElement = (elemName) => {
         return domElements.find (el => el.termixId == elemName).domElement;
     },
-    ensureElement = (domElementObj) => {
+    importElement = (domElementObj) => {
         if (domElementObj.domElement) {
             // do not push if termixId not unique
             if (pushObjectIfUniqueProp(domElements, domElementObj, 'termixId')) {
@@ -813,7 +815,7 @@ termix = {
     },    
     retrieveElement: retrieveElement,
     importCommand: importCommand,
-    importElement: ensureElement,
+    importElement: importElement,
     run: handleEnter,
     cmd: cmdElem,
     log: (what) => {log(0, what)},    
