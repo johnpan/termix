@@ -20,7 +20,10 @@ let
     logLevel = 1,
     allowEval = 0,
     useLastCommand = 0,
-    domElements = [],
+    domElements = [{
+        domElement: document.querySelector(".editorHeader"),
+        termixId: "termixPlaceholder"
+    }],
     commands = [
         {
             command: 'insert',
@@ -330,7 +333,7 @@ let
         },
         {
             command: '/exit',
-            commandKey: '/x',  
+            commandKey: '/kill',  
             help: `removes the terminal`,
             method: () => {
                 cmdElem.remove();
@@ -376,14 +379,19 @@ const
         termixId: ''
     },
     retrieveElement = (elemName) => {
-        //todo
+        return domElements.find (el => el.termixId == elemName).domElement;
     },
     ensureElement = (domElementObj) => {
         if (domElementObj.domElement) {
-            domElements.push(domElementObj);
-            return `success: ${domElementObj.termixId}`;            
+            // do not push if termixId not unique
+            if (pushObjectIfUniqueProp(domElements, domElementObj, 'termixId')) {
+                return `success: ${domElementObj.termixId}`; 
+            }
+            else {
+                return `FAIL: termixId duplicate: ${domElementObj.termixId}`;   
+            }            
         } else {
-            return `FAIL: ${domElementObj.termixId}`;   
+            return `FAIL: element not found: ${domElementObj.termixId}`;   
         }
     }, 
     findCommand = (word0, seekArr) => {
@@ -583,6 +591,20 @@ const
     validParamName = (str) => { 
         return !!str && !!str.trim();
     },
+    pushObjectIfUniqueProp = (arr, obj, prop) => {
+		/**
+		 * pushes the object in the array if there is no other object with object.prop === val in the array
+         * @param  {Array} arr      the array to push into 
+         * @param  {Object} obj     the object to be pushed into the array
+		 * @param  {string} prop    the property of the object to search for uniqueness
+		 * @return {Boolean}        returns true true if object was pushed in array, else false
+		 */
+		const found = arr.some( i => {
+			return i[prop] === obj[prop];
+        });
+		if (!found) arr.push(obj);
+		return !found;
+	},
     setOutput = (txt, append=true) => {
         let preText = "";       
         preText = append ? cmdElem.value : "";
@@ -708,14 +730,24 @@ const
             log(1, `'${commandObj.command}': ${JSON.stringify(methodOutput)}`);
         }          
     }
-    ui = (where) => {
-        // try for element id if id/class symbols missing
-        if (!where.startsWith("#")&&!where.startsWith(".")) where = "#"+where;
-        const el = document.querySelector(where);
-        if  (el == null) {
+    init = (where) => {
+        // accepts string for selector or dom object or no param.        
+        let el = null;
+        if (typeof (where) === "string") {
+            // try for element id if id/class symbols missing
+            if (!where.startsWith("#")&&!where.startsWith(".")) where = "#"+where;
+            el = document.querySelector(where);
+        } else if (typeof (where) === "object") {
+            // presume we got a DOM element
+            el = where;
+        } else {
+            // if no param, look in domElements for the object named 'termixPlaceholder'
+            el = retrieveElement('termixPlaceholder');
+        }
+        if (el == null) {
             say('element id not found');
             return;
-        }            
+        }   
         // append a text input in html and a textArea for logs
         el.outerHTML += templateHTML;
         // fork html elements
@@ -774,19 +806,20 @@ const
 ; 
 
 termix = {
-    init : ui,
-    commandModel: commandModel,
-    domElementModel: domElementModel,
+    init : init,
+    models: {
+        commandModel: commandModel,
+        domElementModel: domElementModel,
+    },    
     retrieveElement: retrieveElement,
     importCommand: importCommand,
     importElement: ensureElement,
     run: handleEnter,
     cmd: cmdElem,
-    log: (what) => {log(0, what)},
+    log: (what) => {log(0, what)},    
+    kill: () => handleEnter('/exit'),
     version: () => termix_version,
-    show: () => {
-        cmdElem.style.display = '';
-    }
+    show: () => {cmdElem.style.display = '';}
 }
 
 // liberate / expose to window scope
@@ -794,6 +827,5 @@ window.termix = termix;
 
 }(window, window.termix));	
 
-
-termix.init(".container");
+// termix.init(".container");
 
