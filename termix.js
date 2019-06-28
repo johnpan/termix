@@ -10,7 +10,7 @@
  * It can be useful when a single command has to be used a lot of times.
  * With this util the command can remember its parameters from previous invoke until they get changed
  * To check what would be parsed, add '-help' or 'help' according to the syntax you use at the eol
- * or change command's setting 'askVerification' to 1
+ * or change command's setting 'askVerification to 1
  */
 let    
     cmdElem = {},
@@ -296,13 +296,24 @@ let
         {
             command: '/load',
             commandKey: '/l',
+            ignoreParse: 1,
             help: `loads js script. Use its URL or short name (jquery, moment)`,
-            method: () => {
-                // todo: laod scripts
-                /*  jquery: https://code.jquery.com/jquery.min.js
-                    moment: https://cdn.jsdelivr.net/momentjs/latest/moment.min.js
-                    binance: -custom termix commands for binance
-                */
+            method: (dataLine) => {               
+                predefined = {
+                    "jquery":"//code.jquery.com/jquery.min.js",
+                    "moment":"//cdn.jsdelivr.net/momentjs/latest/moment.min.js",
+                    "d3":"//cdnjs.cloudflare.com/ajax/libs/d3/5.9.2/d3.min.js",
+                    "datatables":"//cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"
+                };    
+                // replace if predefined found
+                let urls = dataLine.split(' ').map(p => {
+                    let _url = predefined[p.toLowerCase()];
+                    return _url ? _url : p;
+                });
+                // load scripts using callback for each. not chained
+                urls.map( s => appendScript(s) );
+
+                // log(0, `scripts to load: ${urls}`);
            }
         },
         {
@@ -573,6 +584,14 @@ const
         // insert line from history & set historyPointer
         setInput(_history[(historyPointer+=factor)]);
     },
+    appendScript = (_url) => {
+        let tag = document.createElement('script');
+        tag.src = _url; 
+        tag.onload = function() {
+            log(0, _url.split('/').pop()+' loaded');
+        };
+        document.head.appendChild(tag);
+    },    
     log = (level, ...args) => {
         if (isNaN(level)) {
             // warning for the developer
