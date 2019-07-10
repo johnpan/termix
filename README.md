@@ -1,5 +1,5 @@
 
-# termix - Terminal Expirience
+# termix - Terminal Experience
   This is a UI-command-line utility to help typing the less keystrokes possible.
   It can be useful when a single command has to be used a lot of times.
   With this util the command can remember its parameters from previous invoke until they get changed
