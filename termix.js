@@ -76,7 +76,7 @@ let
                     gainNode = audioCtx.createGain(),
                     types = ['sine', 'square', 'sawtooth', 'triangle']
                 ;
-                log(1, msg);
+                if (msg) log(1, msg);
                 keepInRange = (val, min, max) => {
                     val = val < min ? min : val;
                     val = val > max ? max : val;
@@ -113,7 +113,7 @@ let
                 const                 
                     signal = dataLine,
                     durations = { "." : 250, "-" : 450, "_" : 450, " " : 200 }, 
-                    beepSettings = { frequency:1500, type:'square', volume:1 }
+                    beepSettings = { frequency:1500, type:'square', volume:1, msg:''}
                 ;
                 playChar = (signal) => {
                     const _sound = signal[0], d = durations[_sound];
@@ -132,13 +132,13 @@ let
         },
         {
             command: 'speak',
-            help: ``,
+            help: `todo`,
             method: (dataObj) => {
-                const {message, voiceInd=4} = dataObj,
+                const {message, voice=4} = dataObj,
                     msg = new SpeechSynthesisUtterance(message),
                     voices = window.speechSynthesis.getVoices()
                 ;
-                msg.voice = voices[voiceInd];
+                msg.voice = voices[voice];
                 window.speechSynthesis.speak(msg);
             }
         }
@@ -447,7 +447,6 @@ const
         commandKey: '',
         method: (dataObj) => {return 'ready'},
         defaults: {},
-        lastData: {},
         help: ``, 
         mergePolicy: 0,
         askVerification: 1,
@@ -455,7 +454,6 @@ const
     },
     domElementModel = { 
         dynamicSelect: '',
-        domElement: null,
         termixId: ''
     },
     retrieveElement = (elemName) => {
@@ -849,7 +847,7 @@ const
             setVerify("Are you sure? (y/n)", parseData);
         }
     },
-    init = (where) => {
+    init = (where, prepend=false) => {
         // accepts string for selector or dom object or no param.        
         let el = null;
         if (typeof (where) === "string") {
@@ -860,8 +858,8 @@ const
             // presume we got a DOM element
             el = where;
         } else {
-            // if no param, look in domElements for the object named 'termixPlaceholder'
-            el = retrieveElement('termixPlaceholder');
+            // if no param, look in domElements for the object named '__termixPlaceholder__'
+            el = retrieveElement('__termixPlaceholder__');
             // if not found, use default placeholder
             if (!el) { el = document.head; }
         }
@@ -873,7 +871,11 @@ const
         const prevPlaced = document.querySelector("#termix");
         if (prevPlaced) { prevPlaced.remove(); }
         // append a text input in html and a textArea for logs
-        el.outerHTML += templateHTML;
+        if (prepend) {
+            el.outerHTML = templateHTML + el.outerHTML;
+        } else {
+            el.outerHTML += templateHTML;
+        }
         // fork html elements
         cmdElem = document.querySelector('#termix');
         // now the input element is in DOM. Add event listener
