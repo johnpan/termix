@@ -19,6 +19,7 @@ let
     historyPointer = -1,
     unverifiedParseData = {},
     dialogData = [],
+    dialogPromiser = {isBusy: false},
     logLevel = 1,
     allowEval = 0,
     useLastCommand = 0,
@@ -27,6 +28,7 @@ let
         {
             command: 'insert',
             commandKey: 'i',
+            help: `sample on how default params work`, 
             method: (dataObj) => {
                 // custom code to run command operation
                 return `inserted: ${JSON.stringify(dataObj, cautiousStringifier)}`;                     
@@ -36,9 +38,7 @@ let
                 verb: 'is',
                 what: 'awsome',
                 when: new Date().toJSON().slice(0,10)
-            },
-            lastData: {}, 
-            help: `sample on how default params work`,               
+            },               
             mergePolicy: 2,
             askVerification: 1
         },
@@ -134,6 +134,9 @@ let
             command: 'speak',
             help: `todo`,
             method: (dataObj) => {
+                // todo: should work for dataObj AND dataLine: 
+                //      speak Hello this is Termix
+                //      speak -message Hello this is Termix -voice 4
                 const {message, voice=4} = dataObj,
                     msg = new SpeechSynthesisUtterance(message),
                     voices = window.speechSynthesis.getVoices()
@@ -415,7 +418,7 @@ let
             commandKey: '/kill',  
             help: `removes the terminal`,
             method: () => {
-                cmdElem.remove();
+                if (cmdElem) cmdElem.remove();                
                 delete window.termix;
             }
         },
@@ -438,7 +441,7 @@ let
 ;
 
 const
-    termix_version = "0.0.2",
+    termix_version = "0.1.3",
     templateHTML = `
     <textarea id="termix" style="caret-color:red;width:100%;height:150px;background-color:black;color:olive;border:none;padding:1%;font:16px/20px consolas;">Termix v${termix_version}&#10;</textarea>
     `,
@@ -449,7 +452,7 @@ const
         defaults: {},
         help: ``, 
         mergePolicy: 0,
-        askVerification: 1,
+        askVerification: 0,
         ignoreParse: 0
     },
     domElementModel = { 
@@ -483,16 +486,12 @@ const
         let wasCommand = true;
         // seek in array
         let commandIndex = seekArr.findIndex( obj => { return obj.command === word0 || obj.commandKey === word0 });
-        // if no command found, this word was not a command, but a param for previous or default command
+        // if no command found, this word was not a command, but a param for previous command
         if (commandIndex===-1) wasCommand = false;
         // use previous command if no command            
         if (commandIndex===-1 && useLastCommand) {
             commandIndex = seekArr.findIndex( obj => { return obj.command === previousCommand });
-        }
-        // use default command if no previous command
-        if (commandIndex===-1) {
-            commandIndex = seekArr.findIndex( obj => { return obj.command === '' });
-        }            
+        }         
         return {
             index: commandIndex,
             wasCommand: wasCommand
@@ -718,8 +717,9 @@ const
         return spaced.join(' ');
     },
     parseLine = (dataLine) => {
+        dataLine = dataLine.trim();
         // if no text, do not keep in history
-        if (dataLine.trim()) {
+        if (dataLine) {
             // set historyPointer to -1
             historyPointer = -1;
             // keep line in History in zero index if not same as previous
@@ -729,14 +729,14 @@ const
             return;
         }
         // trim spaces & get the first word to check if it is a command
-        const spaced = dataLine.trim().split(' ');
+        const spaced = dataLine.split(' ');
         let word0 = spaced[0];
         // search in specialCommands or in commands
         const isSpecial = word0.charAt(0)==='/';
         const seekArr = isSpecial ? specialCommands:commands; 
         const seekCommandResponse = findCommand(word0, seekArr);
         if (seekCommandResponse.index===-1) {
-            log(0, `'${word0}': ${isSpecial?'special ':''}command not found. ${isSpecial?'':'Previous & default commands not available.'}`);
+            log(0, `'${word0}': ${isSpecial?'special ':''}command not found. ${isSpecial?'':'Previous command not available.'}`);
             return;              
         }
         // remove first word if it was a command 
@@ -854,11 +854,11 @@ const
             // try for element id if id/class symbols missing
             if (!where.startsWith("#")&&!where.startsWith(".")) where = "#"+where;
             el = document.querySelector(where);
-        } else if (typeof (where) === "object") {
+        } else if (where != null && typeof (where) === "object") {
             // presume we got a DOM element
             el = where;
         } else {
-            // if no param, look in domElements for the object named '__termixPlaceholder__'
+            // if no param, look in domElements for the object named '__termixPlaceholder__'           
             el = retrieveElement('__termixPlaceholder__');
             // if not found, use default placeholder
             if (!el) { el = document.head; }
@@ -898,68 +898,74 @@ const
     dialogListener = (e) => {
         const _key = e.which || e.keyCode;
         if (_key === 13) {
-
-            // find first not answered question
-            let questionSeek = { };
-            for (const [i, q] of dialogData.entries()) {
-                if ( q.answer === undefined ) {
-                    questionSeek.question = q;
-                    questionSeek.i = i;
-                    break;
-                }
-            }
-            
-            dialogData[questionSeek.i].answer = getInput().trim();
-
-            setDialog(dialogData);
+            setDialog(dialogData, getInput().trim());
         }
     },
-    setDialog = (questionsArr) => {
-        const _promised = new Promise();
-
-        // find first not answered question
-        let questionSeek = { isClean: false, isComplete: true };
-        for (const [i, q] of questionsArr.entries()) {
-            if ( q.answer === undefined ) {
-                questionSeek.question = q.question;
-                questionSeek.default = q.default;
-                questionSeek.isComplete = false;
-                if ( i == 0 ) questionSeek.isClean = true;
-                break;
+    setDialog = (questionsArr, answer=null) => {
+        let questionSeek = { 
+                isClean: answer==null, 
+                isComplete: false,
+                question: null,
+                default: null
+            },
+            questionsCount = questionsArr.length
+        ;        
+        if (questionSeek.isClean) {
+            // first question to be asked
+            questionSeek.question = questionsArr[0].question;
+            questionSeek.default = questionsArr[0].default;
+        } else {        
+            for (const [i, q] of questionsArr.entries()) {
+                // store answer from previous question
+                if (q.answer === undefined) {
+                    questionsArr[i].answer = questionsArr[i].default && answer=='' ?
+                        questionsArr[i].default 
+                        : 
+                        answer;
+                    // if not end of array, get next question
+                    if ( i+1 < questionsCount) {
+                        questionSeek.question = questionsArr[i+1].question;
+                        questionSeek.default = questionsArr[i+1].default;
+                        break;
+                    } else {            
+                        questionSeek.isComplete = true;
+                    }
+                }               
             }
         }
-
         // set Listeners
         if (questionSeek.isClean) {
-            dialogData = questionsArr;
             cmdElem.removeEventListener('keydown', defaultListener);
             cmdElem.addEventListener('keydown', dialogListener);
         }
         if (questionSeek.isComplete) {
-            dialogData = [];
             cmdElem.removeEventListener('keydown', dialogListener);
             cmdElem.addEventListener('keydown', defaultListener);
-
-            //return;
-            // todo : resolve Promise
-            _promised.resolve(dialogData);
+            dialogPromiser.resolve(dialogData);
+            // clear global data holders 
+            dialogPromiser.isBusy = false;               
+            dialogData = [];
             return;
         }
-
+        // update global object
+        dialogData = questionsArr;
         // prompt for first not answered question
-        let prompt = 
-            questionSeek.isClean || questionSeek.default ?
-                `${questionSeek.question} \n`
-                :
-                `${questionSeek.question} `
+        let prompt = questionSeek.default ?
+            `${questionSeek.question} (press enter to accept default: ${questionSeek.default}) `
+            :
+            `${questionSeek.question} `
         ;
         log(0, prompt);
-        if (questionSeek.default) setInput(questionSeek.default + "(press enter to accept default)");
 
-        // return in Promise
-        console.log('dialogData', dialogData);
-        return _promised;
-
+        // return the promise to the dialog initiator
+        if (!dialogPromiser.isBusy) {
+            _promised = new Promise((resolve, reject) => {
+                dialogPromiser.resolve = resolve;
+                dialogPromiser.reject = reject;
+            });
+            dialogPromiser.isBusy = true;
+            return _promised;
+        }
     },
     verifyListener = (e) => {
         const _key = e.which || e.keyCode;
@@ -1008,4 +1014,4 @@ window.termix = termix;
 
 }(window, window.termix));	
 
- termix.init();
+// termix.init();
