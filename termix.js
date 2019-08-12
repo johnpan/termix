@@ -1,5 +1,4 @@
 (function (window, termix) {
-    // console.log('termix', termix);
     if (termix) {
         console.log ('termix already loaded');
         return; 
@@ -19,7 +18,7 @@ let
     historyPointer = -1,
     unverifiedParseData = {},
     dialogData = [],
-    dialogPromiser = {isBusy: false},
+    dialogPromiser = {isBusy: false, forceBreak:false},
     logLevel = 1,
     allowEval = 0,
     useLastCommand = 0,
@@ -418,8 +417,9 @@ let
             commandKey: '/kill',  
             help: `removes the terminal`,
             method: () => {
-                if (cmdElem) cmdElem.remove();                
-                delete window.termix;
+                if (cmdElem && cmdElem.remove) cmdElem.remove(); 
+                delete window.termix;                               
+                say('termix dead');
             }
         },
         {
@@ -672,7 +672,7 @@ const
         say(...args);
     },  
     say = (...args) => {
-        console.log(...args);
+        console.log("___termix: ", ...args);
     },
     runEval = (str) => {
         return eval(str);
@@ -899,9 +899,23 @@ const
         const _key = e.which || e.keyCode;
         if (_key === 13) {
             setDialog(dialogData, getInput().trim());
+        } else if ( e.ctrlKey && (_key == 67 || _key == 99)) {
+            setDialog(dialogData, "__BREAK__");
+            e.preventDefault(); 
+            return false;
         }
     },
     setDialog = (questionsArr, answer=null) => {
+        if (answer == "__BREAK__") {
+            cmdElem.removeEventListener('keydown', dialogListener);
+            cmdElem.addEventListener('keydown', defaultListener);
+            dialogPromiser.reject(dialogData);
+            // clear global data holders 
+            dialogPromiser.isBusy = false;               
+            dialogData = [];
+            log(0, "Dialog escaped \n");
+            return;
+        }        
         let questionSeek = { 
                 isClean: answer==null, 
                 isComplete: false,
