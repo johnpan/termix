@@ -679,7 +679,7 @@ const
     }
     cautiousStringifier = (k, v) => {
         // shows params even with undefined values
-        return (v === undefined) ? '__undefined' : v;
+        return (v === undefined) ? '__undefined__' : v;
     },
     validParamName = (str) => { 
         return !!str && !!str.trim();
@@ -955,7 +955,12 @@ const
         if (questionSeek.isComplete) {
             cmdElem.removeEventListener('keydown', dialogListener);
             cmdElem.addEventListener('keydown', defaultListener);
-            dialogPromiser.resolve(dialogData);
+            // create ansewrs object
+            let answersObj = {};
+            for (const [i, q] of questionsArr.entries()) {
+                answersObj[q.keyName] = q.answer
+            }
+            dialogPromiser.resolve(answersObj);
             // clear global data holders 
             dialogPromiser.isBusy = false;               
             dialogData = [];
