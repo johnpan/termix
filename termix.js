@@ -440,11 +440,12 @@ let
     ]
 ;
 
+let templateHTML = `
+<textarea id="termix" style="caret-color:red;width:100%;height:150px;background-color:black;color:olive;border:none;padding:1%;font:16px/20px consolas;">Termix v${termix_version}&#10;</textarea>
+`;
+
 const
-    termix_version = "0.1.3",
-    templateHTML = `
-    <textarea id="termix" style="caret-color:red;width:100%;height:150px;background-color:black;color:olive;border:none;padding:1%;font:16px/20px consolas;">Termix v${termix_version}&#10;</textarea>
-    `,
+    termix_version = "0.1.3", 
     commandModel = {
         command: '',
         commandKey: '',
@@ -1013,6 +1014,7 @@ const
 
 termix = {
     init : init,
+    termixTemplate : templateHTML,
     models: {
         commandModel: commandModel,
         domElementModel: domElementModel,
