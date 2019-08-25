@@ -453,16 +453,14 @@ const
         dynamicSelect: '',
         termixId: ''
     },
-    retrieveElement = (elemName) => {
+    retrieveElement = (elemName, getStored=true) => {
         // ensure first! check if element exists, could have been removed. 
         // Try again with dynamicSelect if not found
-        console.log('domElements ', domElements);
         let _model = domElements.find (el => el.termixId == elemName),
             _el = null;
         if (_model) {
-            _el = _model.domElement ? _model.domElement : runEval(_model.dynamicSelect);
+            _el = (_model.domElement && getStored) ? _model.domElement : runEval(_model.dynamicSelect);
         }
-        console.log('returning ', _el);
         return _el;
     },
     importElement = (domElementObj) => {
@@ -1044,4 +1042,3 @@ window.termix = termix;
 }(window, window.termix));	
 
 // termix.init();
-
