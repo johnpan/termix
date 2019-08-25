@@ -456,11 +456,13 @@ const
     retrieveElement = (elemName) => {
         // ensure first! check if element exists, could have been removed. 
         // Try again with dynamicSelect if not found
+        console.log('domElements ', domElements);
         let _model = domElements.find (el => el.termixId == elemName),
             _el = null;
         if (_model) {
             _el = _model.domElement ? _model.domElement : runEval(_model.dynamicSelect);
         }
+        console.log('returning ', _el);
         return _el;
     },
     importElement = (domElementObj) => {
@@ -710,10 +712,10 @@ const
         spaced.shift();
         return spaced.join(' ');
     },
-    parseLine = (dataLine, keepInHistory) => {
+    parseLine = (dataLine) => {
         dataLine = dataLine.trim();
-        // if no text, or not typed by user, do not keep in history
-        if (dataLine && keepInHistory) {
+        // if no text, do not keep in history
+        if (dataLine) {
             // set historyPointer to -1
             historyPointer = -1;
             // keep line in History in zero index if not same as previous
@@ -831,7 +833,7 @@ const
         execute(findCommandObj(commandName, foundArr), params, foundArr);
     },
     handleEnter = (dataLine, keepInHistory=false) => {   
-        parseData = parseLine(dataLine, keepInHistory);
+        parseData = parseLine(dataLine);
         if (!parseData) return;
         const {commandObj, dataObj, seekArr, isSpecial, commandIndex} = parseData;        
         // check if should execute the command
@@ -1042,5 +1044,4 @@ window.termix = termix;
 }(window, window.termix));	
 
 // termix.init();
-
 
