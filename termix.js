@@ -850,8 +850,13 @@ const
             setVerify("Are you sure? (y/n)", parseData);
         }
     },
-    init = (where, prepend=false) => {
-        // accepts string for selector or dom object or no param.        
+    init = (where, appendMode=0) => {
+        /* appendMode: 
+            0: append (default),
+            1: prepend
+            2: replace
+        */
+        // init accepts string for selector or dom object or no param.        
         let el = null;
         if (typeof (where) === "string") {
             // try for element id if id/class symbols missing
@@ -873,11 +878,13 @@ const
         // remove if already somewhere
         const prevPlaced = document.querySelector("#termix");
         if (prevPlaced) { prevPlaced.remove(); }
-        // append a text input in html and a textArea for logs
-        if (prepend) {
-            el.outerHTML = templateHTML + el.outerHTML;
-        } else {
+        // put termix template in DOM
+        if (appendMode == 0) {
             el.outerHTML += templateHTML;
+        } else if (appendMode == 1) {
+            el.outerHTML = templateHTML + el.outerHTML;            
+        } else if (appendMode == 2) {
+            el.innerHTML = templateHTML;
         }
         // fork html elements
         cmdElem = document.querySelector('#termix');
@@ -1038,3 +1045,5 @@ window.termix = termix;
 }(window, window.termix));	
 
 // termix.init();
+
+
