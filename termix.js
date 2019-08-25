@@ -716,10 +716,10 @@ const
         spaced.shift();
         return spaced.join(' ');
     },
-    parseLine = (dataLine) => {
+    parseLine = (dataLine, keepInHistory) => {
         dataLine = dataLine.trim();
-        // if no text, do not keep in history
-        if (dataLine) {
+        // if no text, or not typed by user, do not keep in history
+        if (dataLine && keepInHistory) {
             // set historyPointer to -1
             historyPointer = -1;
             // keep line in History in zero index if not same as previous
@@ -813,7 +813,7 @@ const
             // run command method from the commands array
             methodOutput = commandObj.method(dataObj);
             if (keepInHistory) {
-                // store as previous command
+                // store as previous command only if typed by user
                 previousCommand = commandObj.command;
                 // keep dataObj in command's lastData
                 if (commandIndex > -1) commandArr[commandIndex].lastData = dataObj;
@@ -837,7 +837,7 @@ const
         execute(findCommandObj(commandName, foundArr), params, foundArr);
     },
     handleEnter = (dataLine, keepInHistory=false) => {   
-        parseData = parseLine(dataLine);
+        parseData = parseLine(dataLine, keepInHistory);
         if (!parseData) return;
         const {commandObj, dataObj, seekArr, isSpecial, commandIndex} = parseData;        
         // check if should execute the command
