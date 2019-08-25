@@ -133,15 +133,12 @@ let
             command: 'speak',
             help: `todo`,
             method: (dataObj) => {
-                // todo: should work for dataObj AND dataLine: 
-                //      speak Hello this is Termix
-                //      speak -message Hello this is Termix -voice 4
-                const {message, voice=4} = dataObj,
-                    msg = new SpeechSynthesisUtterance(message),
-                    voices = window.speechSynthesis.getVoices()
+                const
+                    _msg = new SpeechSynthesisUtterance(dataObj.message || dataObj.msg || Object.getOwnPropertyNames(dataObj)[0] || 'hello'),
+                    voices = window.speechSynthesis.getVoices();
                 ;
-                msg.voice = voices[voice];
-                window.speechSynthesis.speak(msg);
+                _msg.voice = voices[(dataObj.voice || 4)];
+                window.speechSynthesis.speak(_msg);
             }
         }
 
@@ -440,12 +437,8 @@ let
     ]
 ;
 
-let templateHTML = `
-<textarea id="termix" style="caret-color:red;width:100%;height:150px;background-color:black;color:olive;border:none;padding:1%;font:16px/20px consolas;">Termix v${termix_version}&#10;</textarea>
-`;
-
 const
-    termix_version = "0.1.3", 
+    termix_version = "0.1.4", 
     commandModel = {
         command: '',
         commandKey: '',
@@ -1018,6 +1011,10 @@ const
         cmdElem.addEventListener('keydown', verifyListener);
     } 
 ; 
+
+let templateHTML = `
+<textarea id="termix" style="caret-color:red;width:100%;height:150px;background-color:black;color:olive;border:none;padding:1%;font:16px/20px consolas;">Termix v${termix_version}&#10;</textarea>
+`;
 
 termix = {
     init : init,
