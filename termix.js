@@ -1018,7 +1018,7 @@ let templateHTML = `
 
 termix = {
     init : init,
-    termixTemplate : templateHTML,
+    htmlTemplate : (what) => templateHTML = what,
     models: {
         commandModel: commandModel,
         domElementModel: domElementModel,
