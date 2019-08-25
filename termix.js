@@ -787,7 +787,7 @@ const
             commandIndex : seekCommandResponse.index,
         };        
     },
-    execute = (commandObj, dataObj={}, commandArr=[{}], isSpecial=false, commandIndex=-1) => {
+    execute = (commandObj, dataObj={}, commandArr=[{}], isSpecial=false, commandIndex=-1, keepInHistory=false) => {
         let methodOutput = "";
         if (isSpecial) {
             // if there are params, look for settingsMapper, else, run method
@@ -812,10 +812,12 @@ const
         } else {
             // run command method from the commands array
             methodOutput = commandObj.method(dataObj);
-            // store as previous command
-            previousCommand = commandObj.command;
-            // keep dataObj in command's lastData
-            if (commandIndex > -1) commandArr[commandIndex].lastData = dataObj;
+            if (keepInHistory) {
+                // store as previous command
+                previousCommand = commandObj.command;
+                // keep dataObj in command's lastData
+                if (commandIndex > -1) commandArr[commandIndex].lastData = dataObj;
+            }
         }
         // log details
         log(3, `command:${commandObj.command} dataObj:${JSON.stringify(dataObj, cautiousStringifier)}`);
@@ -834,14 +836,14 @@ const
         if (seekCommandResponse.index===-1)  return;
         execute(findCommandObj(commandName, foundArr), params, foundArr);
     },
-    handleEnter = (dataLine) => {   
+    handleEnter = (dataLine, keepInHistory=false) => {   
         parseData = parseLine(dataLine);
         if (!parseData) return;
         const {commandObj, dataObj, seekArr, isSpecial, commandIndex} = parseData;        
         // check if should execute the command
         if (!commandObj.askVerification) {
              // ready to run the command
-            execute(commandObj, dataObj, seekArr, isSpecial, commandIndex);
+            execute(commandObj, dataObj, seekArr, isSpecial, commandIndex, keepInHistory);
         } else {
             log(1, `${commandObj.command} : ${JSON.stringify(dataObj, cautiousStringifier)}`);
             setVerify("Are you sure? (y/n)", parseData);
@@ -884,7 +886,7 @@ const
     defaultListener = (e) => {
         const _key = e.which || e.keyCode;
         if (_key === 13) {      // Enter
-            handleEnter(getInput());
+            handleEnter(getInput(), true); // invoke with keepInHistory:true
         }
         else if (_key === 38) { // Up
             historyNavigate(1);
