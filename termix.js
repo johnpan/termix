@@ -104,11 +104,11 @@ let
             }
         },
         {
-            command: 'mors',
-            help: `todo`,
+            command: 'morse',
+            commandKey: 'mors',
+            help: `syntax sample: mors ..-. -.. .-- --. ..--.`,
             ignoreParse: 1,
             method: (dataLine) => {
-                // signal sample : '..-. -.. .-- --. ..--. ---. ----- .....  .- .- --. --. ---. .--. ..-. .--. .-.  --. --. .. -.-. --'
                 const                 
                     signal = dataLine,
                     durations = { "." : 250, "-" : 450, "_" : 450, " " : 200 }, 
@@ -131,13 +131,14 @@ let
         },
         {
             command: 'speak',
-            help: `todo`,
+            help: `syntax sample: speak -msg This is a test -volume 0.6 -voice 4`,
             method: (dataObj) => {
                 const
-                    _msg = new SpeechSynthesisUtterance(dataObj.message || dataObj.msg || Object.getOwnPropertyNames(dataObj)[0] || 'hello'),
+                    _msg = new SpeechSynthesisUtterance(dataObj.message || dataObj.msg || Object.getOwnPropertyNames(dataObj)[0] || 'hello'), 
                     voices = window.speechSynthesis.getVoices();
                 ;
                 _msg.voice = voices[(dataObj.voice || 4)];
+                _msg.volume = dataObj.volume || 1;
                 window.speechSynthesis.speak(_msg);
             }
         }
@@ -289,7 +290,7 @@ let
             command: '/import-command',
             help: `imports custom command`,
             method: (dataObj) => {
-                // to do: eval method or wrap with window...
+                // todo: eval method or wrap with window...
                 // sample should work: /import-command -command myFirstCom -commandKey mfc -verification 1 -merge-policy 2 -method termix.log
     
                 return importCommand(dataObj);
@@ -332,7 +333,7 @@ let
             }
         },
         {
-            command: '/watch',
+            command: '/watch-net',
             commandKey: '/w',
             help: `logs all xhr requests`,
             method: () => {
@@ -350,7 +351,7 @@ let
         {
             command: '/storage',
             commandKey: '/store',
-            help: `gets, sets, and removes from LocalStorage`,
+            help: `gets, sets, and removes from LocalStorage or/and SessionStorage`,
             method: () => {
                 // todo local storage get, set, remove
             }
@@ -402,14 +403,6 @@ let
             }
         },
         {
-            command: '/dialog',
-            commandKey: '/question',
-            help: `return an object with user's answers`,
-            method: (dataObj) => {
-                // todo. 
-            }
-        },
-        {
             command: '/exit',
             commandKey: '/kill',  
             help: `removes the terminal`,
@@ -438,7 +431,7 @@ let
 ;
 
 const
-    termix_version = "0.1.4", 
+    termix_version = "0.1.5", 
     commandModel = {
         command: '',
         commandKey: '',
@@ -514,7 +507,7 @@ const
             return `FAIL: command ${commandObj.command}/${commandObj.commandKey} cannot be imported, another command uses these keys`
         } else {
 
-            // to do: eval method or wrap with window...
+            // todo: eval method or wrap with window...
             // sample should work: /import -command myFirstCom -commandKey mfc -verification 1 -merge-policy 2 -method termix.log
 
             commands.push (Object.assign({}, commandModel, commandObj));
@@ -844,11 +837,7 @@ const
         }
     },
     init = (where, appendMode=0) => {
-        /* appendMode: 
-            0: append (default),
-            1: prepend
-            2: replace
-        */
+        // appendMode: 0: append (default), 1: prepend, 2: replace
         // init accepts string for selector or dom object or no param.        
         let el = null;
         if (typeof (where) === "string") {
