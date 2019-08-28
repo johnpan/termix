@@ -48,7 +48,7 @@ let
             method: (dataLine) => {
                 let transactionWindow = window.open(
                     `https://www.google.com/maps/search/${dataLine}`, 
-                    'termixWindow'+(Math.random()+"").substr(-3)
+                    'termixWindow'+rnd()
                 );
             }
         },
@@ -59,7 +59,7 @@ let
             method: (dataLine) => {
                 let transactionWindow = window.open(
                     `https://www.google.com/search?q=${dataLine}`, 
-                    'termixWindow'+(Math.random()+"").substr(-3)
+                    'termixWindow'+rnd()
                 );
             }
         },
@@ -661,9 +661,12 @@ const
     say = (...args) => {
         console.log("___termix: ", ...args);
     },
+    rnd = () => {
+        return (Math.random()+"").substr(-3); // wrap with Number() ?
+    },
     runEval = (str) => {
         return eval(str);
-    }
+    },
     cautiousStringifier = (k, v) => {
         // shows params even with undefined values
         return (v === undefined) ? '__undefined__' : v;
@@ -1006,11 +1009,9 @@ let templateHTML = `
 `;
 
 termix = {
-    init : init,
-    htmlTemplate : (what) => templateHTML = what,
     models: {
-        commandModel: commandModel,
         domElementModel: domElementModel,
+        commandModel: commandModel,
     },    
     retrieveElement: retrieveElement,
     importCommand: importCommand,
@@ -1019,10 +1020,13 @@ termix = {
     run: handleEnter,
     apply: apply,
     cmd: cmdElem,
-    log: (what) => {log(0, what)},    
-    kill: () => handleEnter('/exit'),
+    init : init,
+    rnd: rnd, 
+    log: (what) => {log(0, what)},   
     version: () => termix_version,
-    show: () => {cmdElem.style.display = '';}
+    kill: () => handleEnter('/exit'),
+    show: () => {cmdElem.style.display = '';},
+    htmlTemplate : (what) => templateHTML = what
 }
 
 // liberate / expose to window scope
