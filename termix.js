@@ -431,7 +431,7 @@ let
 ;
 
 const
-    termix_version = "0.1.5", 
+    termix_version = "0.2.6", 
     commandModel = {
         command: '',
         commandKey: '',
@@ -576,10 +576,12 @@ const
                 })
             ;
         }
-        // clear params with no name
+        // sanitize provided data
         let validDataObj = {}; 
         Object.keys(dataObj).map( k => { 
-            if ( validParamName(k)) validDataObj[k] = dataObj[k] 
+            // clear params with no name
+            // and convert undifined to true. User provided empty string in fact, but it is used as a flag
+            if ( validParamName(k)) validDataObj[k] = dataObj[k] ? dataObj[k] : true;
         });
         // merge with defaults and lastData, following command's mergePolicy
         // priority is always dataObj > lastData > defaults and cannot be changed
