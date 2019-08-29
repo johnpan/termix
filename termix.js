@@ -223,7 +223,7 @@ let
                         Global settings:
                          allow-eval: ${allowEval}
                          log-level: ${logLevel}
-                         use-last-command: ${useLastCommand}    `);
+                         use-last-command: ${useLastCommand}`);
                     }
                 },
             ]                   
@@ -567,7 +567,9 @@ const
         let validDataObj = {}; 
         Object.keys(dataObj).map( k => { 
             // clear params with no name
-            // and convert undifined to true. User provided empty string in fact, but it is used as a flag
+            // convert undefined to true. (User provided empty string in fact, but it is used as a flag)
+            // todo: convert number-string to number 
+            // use code: if (!isNaN(Number(w))) w = Number(w)
             if ( validParamName(k)) validDataObj[k] = dataObj[k] ? dataObj[k] : true;
         });
         // merge with defaults and lastData, following command's mergePolicy
@@ -1018,7 +1020,6 @@ termix = {
     kill: () => handleEnter('/exit'),
     show: () => cmdElem.style.display = '',
     htmlTemplate : (what) => templateHTML = what, //todo: return current value if value empty, do not clear the template
-
 }
 
 // liberate / expose to window scope
