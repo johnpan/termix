@@ -300,7 +300,7 @@ let
             command: '/import-element',
             help: `imports dom element`,
             method: (dataObj) => {
-                // to do: eval method or wrap with window...
+                // todo: eval method or wrap with window...
                 // sample should work: /import-element -selectCommand document.querySelectorAll(".ReactVirtualized__Table")[0] -elemName termixPlaceholder
                        
                 return ensureElement(dataObj);
@@ -484,14 +484,16 @@ const
             wasCommand: wasCommand
         }
     },
-    findCommandObj = (previousCommand, commandsArr) => {
-        const seekCommandResponse = findCommand(previousCommand, commandsArr);
+    findCommandObj = (commandName, commandsArr) => {
+        const seekCommandResponse = findCommand(commandName, commandsArr);
         if (seekCommandResponse.index===-1) return {};
 
         const commandObj = commandsArr[seekCommandResponse.index];
         return commandObj;
     },
-    importCommand = (commandObj) => {
+    importCommand = (commandObj, allowOverwrite=false) => {
+        // todo : allow overwrites
+        // todo : allow remove imported commands using a termix special command. this will help for faster debug
         // ensure command and commandKey is not already in commands array
         let commandFound = commands.findIndex( c => { 
             return (
@@ -664,7 +666,7 @@ const
         console.log("___termix: ", ...args);
     },
     rnd = () => {
-        return (Math.random()+"").substr(-3); // wrap with Number() ?
+        return (Math.random()+"").substr(-4); // wrap with Number() ?
     },
     runEval = (str) => {
         return eval(str);
@@ -677,13 +679,7 @@ const
         return !!str && !!str.trim();
     },
     pushObjectIfUniqueProp = (arr, obj, prop) => {
-		/**
-		 * pushes the object in the array if there is no other object with object.prop === val in the array
-         * @param  {Array} arr      the array to push into 
-         * @param  {Object} obj     the object to be pushed into the array
-		 * @param  {string} prop    the property of the object to search for uniqueness
-		 * @return {Boolean}        returns true true if object was pushed in array, else false
-		 */
+		// pushes the object in the array if there is no other object with object.prop === val in the array
 		const found = arr.some( i => {
 			return i[prop] === obj[prop];
         });
@@ -828,7 +824,9 @@ const
         if (seekCommandResponse.index===-1)  return;
         execute(findCommandObj(commandName, foundArr), params, foundArr);
     },
-    handleEnter = (dataLine, keepInHistory=false) => {   
+    handleEnter = (dataLine, keepInHistory=false) => {
+        // todo: custom code termix.run() should not kept in history
+        //          ^example: `termix.run('speak -message hi there -voice 5 -volume 100');
         parseData = parseLine(dataLine);
         if (!parseData) return;
         const {commandObj, dataObj, seekArr, isSpecial, commandIndex} = parseData;        
@@ -972,7 +970,6 @@ const
             `${questionSeek.question} `
         ;
         log(0, prompt);
-
         // return the promise to the dialog initiator
         if (!dialogPromiser.isBusy) {
             _promised = new Promise((resolve, reject) => {
