@@ -1004,19 +1004,21 @@ termix = {
         commandModel: commandModel,
     },    
     retrieveElement: retrieveElement,
+    putPreviousData: putPreviousData,
     importCommand: importCommand,
     importElement: importElement,
     dialog: setDialog,
     run: handleEnter,
     apply: apply,
     cmd: cmdElem,
-    init : init,
+    init: init,
     rnd: rnd, 
-    log: (what) => {log(0, what)},   
+    log: (what) => log(0, what),   
     version: () => termix_version,
     kill: () => handleEnter('/exit'),
-    show: () => {cmdElem.style.display = '';},
-    htmlTemplate : (what) => templateHTML = what
+    show: () => cmdElem.style.display = '',
+    htmlTemplate : (what) => templateHTML = what, //todo: return current value if value empty, do not clear the template
+
 }
 
 // liberate / expose to window scope
