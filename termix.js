@@ -431,7 +431,7 @@ let
 ;
 
 const
-    termix_version = "0.2.6", 
+    termix_version = "0.2.8", 
     commandModel = {
         command: '',
         commandKey: '',
@@ -505,34 +505,19 @@ const
                 )
             )
         });
-        if (commandFound > -1) {
+        if (commandFound > -1 && !allowOverwrite) {
             return `FAIL: command ${commandObj.command}/${commandObj.commandKey} cannot be imported, another command uses these keys`
+        } else if (commandFound > -1) {
+            // overwrite command
+            commands[commandFound] = Object.assign({}, commandModel, commandObj);
+            return `success overwrite: command ${commandObj.command}/${commandObj.commandKey||"-"}`
         } else {
-
-            // todo: eval method or wrap with window...
-            // sample should work: /import -command myFirstCom -commandKey mfc -verification 1 -merge-policy 2 -method termix.log
-
             commands.push (Object.assign({}, commandModel, commandObj));
-            return `success: command ${commandObj.command}/${commandObj.commandKey}`
+            return `success: command ${commandObj.command}/${commandObj.commandKey||"-"}`
         }
     },
     createDataObj = (commandObj, paramsLine) => {
-        /*            
-        ============
-        scenario 1 - bash syntax (dashes for params): Split with ' -'
-                    - case param with null value (examples: clear -unsafe-op, insert -help)
-            -bus 123 -date 12-22-93 -text 'this is a bus route'
-            /opts -merge-policy 3
-            -bus 123 -unsafe -text 'crazy driver' 
-            -bus "123" -text 'will this work?' -unsafe-op -help -date 12-22-93
-        ============
-        scenario 2 - no dashes for params: Regex to replace spaces in quotes, split with spaces, replace back after split
-                    - param with null value cannot be used
-            bus 123 date 12-22-93 text 'this is a bus route'
-            bus 123 date 12-22-93 text "this is a bus route"
-            bus 123 date 12-22-93 text "this is a bus route" another-text 'single quoted'
-        */
-        
+        // figures out which syntax is used and creates the params object        
         const bashSyntax = paramsLine.charAt(0)==='-';
         let dataObj = {};
         // put params in pairs into dataObj
@@ -641,6 +626,12 @@ const
         }
         // insert line from history & set historyPointer
         setInput(_history[(historyPointer+=factor)]);
+    },
+    putPreviousData = (commandName, dataObj) => {
+        const seekCommandResponse = findCommand(commandName, commands);
+        if (seekCommandResponse.wasCommand) {
+            commands[seekCommandResponse.index].lastData = dataObj;
+        }        
     },
     appendScript = (_url) => {
         log(1, `loading script from ${_url}`);
