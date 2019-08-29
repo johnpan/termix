@@ -9,7 +9,7 @@
  * It can be useful when a single command has to be used a lot of times.
  * With this util the command can remember its parameters from previous invoke until they get changed
  * To check what would be parsed, add '-help' or 'help' according to the syntax you use at the eol
- * or change command's setting 'askVerification to 1
+ * or change command's setting (ask)verification to 1 using /options special command
  */
 let    
     cmdElem = {},
@@ -234,7 +234,7 @@ let
             help: `syntax: /c(/clear) -log -history -command -data
             -log: Clears the log textarea/ You can also use /cls
             -history: clears command history
-            -command: clears previous command so the default command will be used if no command present in the next line
+            -command: clears previous command 
             -data: clears cached params for the previous command
             -all: clears all above
             `,
@@ -988,7 +988,7 @@ const
         if (_key === 13) {
             const verifyLine = getInput().toLowerCase().trim().charAt(0);
             if (verifyLine == 'y') {
-                execute(...Object.values(unverifiedParseData));
+                execute(...Object.values(unverifiedParseData), true);
             } else {
                 log(0, 'command aborted');
             }            
