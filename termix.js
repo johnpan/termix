@@ -756,7 +756,8 @@ const
             log(1, `'${commandObj.command}' help: ${commandObj.help}`);
             if (Object.keys(dataObj).length>1) {
                 // show how command params would run if no '-help' was present
-                log(1, `'${commandObj.command}' params parsed: ${JSON.stringify(dataObj, cautiousStringifier)}`);
+                log(1, `'${commandObj.command}' previous params: ${JSON.stringify(commandObj.lastData, cautiousStringifier)}`);                
+                log(1, `'${commandObj.command}' parsed params  : ${JSON.stringify(dataObj, cautiousStringifier)}`);
             }
             return;
         }
