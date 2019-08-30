@@ -151,10 +151,10 @@ let
             help: `syntax: /opts(/options) -merge-policy [number] -log-level [number] -auto-enter [0|1] -verification [0|1]
             -show: shows all options for last used command
             -merge-policy [0-3]: changes the mergePolicy for last used command. 
-                0: default, merge all,
-                1: ignore defaults, merge lastData 
-                2: merge defaults, ignore lastData 
-                3: ignore all      
+                0: default, merge all, (defaults are not required input)
+                1: ignore defaults, merge lastData (defaults act as required input)
+                2: merge defaults, ignore lastData (defaults are not overwriten by input)
+                3: ignore all (defaults act as required input)
             -log-level [0-3]: changes the log detail level
                 0: log errors only
                 1: default. Log method's output & errors
@@ -517,7 +517,8 @@ const
         }
     },
     createDataObj = (commandObj, paramsLine) => {
-        // figures out which syntax is used and creates the params object        
+        // figures out which syntax is used and creates the params object 
+        // todo: stop supporting dual syntax       
         const bashSyntax = paramsLine.charAt(0)==='-';
         let dataObj = {};
         // put params in pairs into dataObj
@@ -567,10 +568,14 @@ const
         let validDataObj = {}; 
         Object.keys(dataObj).map( k => { 
             // clear params with no name
-            // convert undefined to true. (User provided empty string in fact, but it is used as a flag)
-            // todo: convert number-string to number 
-            // use code: if (!isNaN(Number(w))) w = Number(w)
-            if ( validParamName(k)) validDataObj[k] = dataObj[k] ? dataObj[k] : true;
+            if ( validParamName(k)) {
+                // convert undefined to true. (User provided empty string in fact, but it is used as a flag)
+                let val = dataObj[k] ? dataObj[k] : true;
+                // convert number-string to number 
+                if (!isNaN(Number(val))) val = Number(val);
+                // store parsed value
+                validDataObj[k] = val;        
+            }
         });
         // merge with defaults and lastData, following command's mergePolicy
         // priority is always dataObj > lastData > defaults and cannot be changed
@@ -597,8 +602,8 @@ const
         // if there is a change that required (default) params may not be found
         // AND help is not asked
         if (mergePolicy%2 && !Object.keys(validDataObj).includes("help")) {
-            // If not all default params found dataObj, then abort command.
-            // All default params are considered required
+            // If not all default params found dataObj, then abort command,
+            // because all default params are considered required
             const defaultKeys = Object.keys(_defaults);
             const mergedKeys = Object.keys(mergedObj);
             if (!defaultKeys.every( el => mergedKeys.includes(el))) {
@@ -792,14 +797,14 @@ const
                 return;
             }  
         } else {
-            // run command method from the commands array
-            methodOutput = commandObj.method(dataObj);
             if (keepInHistory) {
                 // store as previous command only if typed by user
                 previousCommand = commandObj.command;
                 // keep dataObj in command's lastData
                 if (commandIndex > -1) commandArr[commandIndex].lastData = dataObj;
-            }
+            }            
+            // run command method from the commands array. This should be the last thing to do
+            methodOutput = commandObj.method(dataObj);            
         }
         // log details
         log(3, `command:${commandObj.command} dataObj:${JSON.stringify(dataObj, cautiousStringifier)}`);
@@ -1021,6 +1026,8 @@ termix = {
     kill: () => handleEnter('/exit'),
     show: () => cmdElem.style.display = '',
     htmlTemplate : (what) => templateHTML = what, //todo: return current value if value empty, do not clear the template
+
+    commands: commands
 }
 
 // liberate / expose to window scope
