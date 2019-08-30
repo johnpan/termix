@@ -11,6 +11,8 @@
  * To check what would be parsed, add '-help' or 'help' according to the syntax you use at the eol
  * or change command's setting (ask)verification to 1 using /options special command
  */
+
+const termix_version = "0.2.9"; 
 let    
     cmdElem = {},
     previousCommand = '',
@@ -431,7 +433,6 @@ let
 ;
 
 const
-    termix_version = "0.2.8", 
     commandModel = {
         command: '',
         commandKey: '',
@@ -492,8 +493,6 @@ const
         return commandObj;
     },
     importCommand = (commandObj, allowOverwrite=false) => {
-        // todo : allow overwrites
-        // todo : allow remove imported commands using a termix special command. this will help for faster debug
         // ensure command and commandKey is not already in commands array
         let commandFound = commands.findIndex( c => { 
             return (
@@ -875,6 +874,11 @@ const
         // now the input element is in DOM. Add event listener
         cmdElem.addEventListener('keydown', defaultListener);
     },
+    htmlTemplate = (what) => {
+        // return current value if value empty, do not clear the template
+        if (!what) return templateHTML;
+        templateHTML = what;
+    }, 
     defaultListener = (e) => {
         const _key = e.which || e.keyCode;
         if (_key === 13) {      // Enter
@@ -1015,6 +1019,7 @@ termix = {
     putPreviousData: putPreviousData,
     importCommand: importCommand,
     importElement: importElement,
+    htmlTemplate : htmlTemplate,
     dialog: setDialog,
     run: handleEnter,
     apply: apply,
@@ -1025,9 +1030,6 @@ termix = {
     version: () => termix_version,
     kill: () => handleEnter('/exit'),
     show: () => cmdElem.style.display = '',
-    htmlTemplate : (what) => templateHTML = what, //todo: return current value if value empty, do not clear the template
-
-    commands: commands
 }
 
 // liberate / expose to window scope
