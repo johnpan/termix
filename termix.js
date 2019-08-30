@@ -516,7 +516,6 @@ const
         }
     },
     createDataObj = (commandObj, paramsLine) => {
-        console.log("paramsLine:"+paramsLine+"|");
         const bashSyntax = paramsLine.charAt(0)==='-' || !paramsLine;
         if (!bashSyntax) {
             return {
@@ -675,10 +674,10 @@ const
         spaced.shift();
         return spaced.join(' ');
     },
-    parseLine = (dataLine) => {
+    parseLine = (dataLine, keepInHistory=true) => {
         dataLine = dataLine.trim();
         // if no text, do not keep in history
-        if (dataLine) {
+        if (dataLine && keepInHistory) {
             // set historyPointer to -1
             historyPointer = -1;
             // keep line in History in zero index if not same as previous
@@ -691,9 +690,10 @@ const
         const spaced = dataLine.split(' ');
         let word0 = spaced[0];
         // search in specialCommands or in commands
-        const isSpecial = word0.charAt(0)==='/';
-        const seekArr = isSpecial ? specialCommands:commands; 
-        const seekCommandResponse = findCommand(word0, seekArr);
+        const isSpecial = word0.charAt(0)==='/',
+              seekArr = isSpecial ? specialCommands:commands, 
+              seekCommandResponse = findCommand(word0, seekArr)
+        ;
         if (seekCommandResponse.index===-1) {
             log(0, `'${word0}': ${isSpecial?'special ':''}command not found. ${isSpecial?'':'Previous command not available.'}`);
             return;              
@@ -797,14 +797,12 @@ const
         execute(findCommandObj(commandName, foundArr), params, foundArr);
     },
     handleEnter = (dataLine, keepInHistory=false) => {
-        // todo: custom code termix.run() should not kept in history
-        //          ^example: `termix.run('speak -message hi there -voice 5 -volume 100');
-        parseData = parseLine(dataLine);
+        parseData = parseLine(dataLine, keepInHistory);
         if (!parseData) return;
         const {commandObj, dataObj, seekArr, isSpecial, commandIndex} = parseData;        
         // check if should execute the command
         if (!commandObj.askVerification) {
-             // ready to run the command
+            // ready to run the command
             execute(commandObj, dataObj, seekArr, isSpecial, commandIndex, keepInHistory);
         } else {
             log(1, `${commandObj.command} : ${JSON.stringify(dataObj, cautiousStringifier)}`);
