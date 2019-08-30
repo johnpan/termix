@@ -4,7 +4,7 @@
         return; 
     }
 /**
- * termix - Terminal Expirience
+ * termix - Terminal Experience
  * This is a UI-command-line utility to help typing the less keystrokes possible.
  * It can be useful when a single command has to be used a lot of times.
  * With this util the command can remember its parameters from previous invoke until they get changed
@@ -12,7 +12,7 @@
  * or change command's setting (ask)verification to 1 using /options special command
  */
 
-const termix_version = "0.2.9"; 
+const termix_version = "0.3.0"; 
 let    
     cmdElem = {},
     previousCommand = '',
@@ -516,53 +516,23 @@ const
         }
     },
     createDataObj = (commandObj, paramsLine) => {
-        // figures out which syntax is used and creates the params object 
-        // todo: stop supporting dual syntax       
-        const bashSyntax = paramsLine.charAt(0)==='-';
+        console.log("paramsLine:"+paramsLine+"|");
+        const bashSyntax = paramsLine.charAt(0)==='-' || !paramsLine;
+        if (!bashSyntax) {
+            return {
+                errMsg: `Non-bash syntax is not supported beyond version 0.3.x`
+            } 
+        }
         let dataObj = {};
         // put params in pairs into dataObj
-        if (bashSyntax) {
-            " ".concat(paramsLine)
-                .split (" -")
-                .splice(1)                   
-                .map( pair => { 
-                    var pairs = pair.replace(" ","*&*").split('*&*'); 
-                    dataObj[pairs[0]] = pairs[1];
-                })
-            ;
-        } else {
-            // decide on spliter
-            let splitter=[], splitters=['"', "`", "'"];
-            splitters.map( spl => {
-                if (paramsLine.indexOf(spl) > -1) splitter.push(spl);
-            });
-            if (splitter.length > 1) {
-                // quoting mess, abort the operation
-                return {
-                    errMsg: `Cannot use more than one quote symbol in non-dash syntax. Quotes types found: ${splitter.join(' ')}`
-                }
-            }
-            if ((paramsLine.split(splitter[0]).length-1)%2) {
-                // splitter ammount is Odd, some quoting not closed, abort the operation
-                return {
-                    errMsg: `Quotes count is odd. Use dash syntax to do that`
-                }
-            }
-            paramsLine
-                .split (splitter[0])
-                .map ( (v,i) => {
-                    return i%2 ? v.replace(/\s/g, "&_&") :v ;
-                })
-                .join ("")
-                .split (" ")
-                .map (el => { 
-                    return el.replace(/&_&/g, " ")
-                })
-                .map( (value, ind, array) => { 
-                    if (ind % 2 === 0 && ind!=array.length) dataObj[value] = array[ind+1]
-                })
-            ;
-        }
+        " ".concat(paramsLine)
+            .split (" -")
+            .splice(1)                   
+            .map( pair => { 
+                var pairs = pair.replace(" ","*&*").split('*&*'); 
+                dataObj[pairs[0]] = pairs[1];
+            })
+        ;        
         // sanitize provided data
         let validDataObj = {}; 
         Object.keys(dataObj).map( k => { 
@@ -578,9 +548,10 @@ const
         });
         // merge with defaults and lastData, following command's mergePolicy
         // priority is always dataObj > lastData > defaults and cannot be changed
-        const mergePolicy = commandObj.mergePolicy || 0;
-        const _defaults = commandObj.defaults || {};
-        const _lastData = commandObj.lastData || {};
+        const mergePolicy = commandObj.mergePolicy || 0,
+             _defaults = commandObj.defaults || {},
+             _lastData = commandObj.lastData || {}
+        ;
         let mergedObj = {};
         switch (mergePolicy) {                
             case 1:
@@ -603,8 +574,8 @@ const
         if (mergePolicy%2 && !Object.keys(validDataObj).includes("help")) {
             // If not all default params found dataObj, then abort command,
             // because all default params are considered required
-            const defaultKeys = Object.keys(_defaults);
-            const mergedKeys = Object.keys(mergedObj);
+            const defaultKeys = Object.keys(_defaults), 
+                  mergedKeys = Object.keys(mergedObj);
             if (!defaultKeys.every( el => mergedKeys.includes(el))) {
                 return {
                     errMsg: `One or more required parameter is missing: ${defaultKeys}`
@@ -634,6 +605,9 @@ const
         setInput(_history[(historyPointer+=factor)]);
     },
     putPreviousData = (commandName, dataObj) => {
+        // Normally, termix saves the lastData for which each command operated.
+        // But sometimes we might need to alter that data after operation,
+        // i.e when se want to reset some params
         const seekCommandResponse = findCommand(commandName, commands);
         if (seekCommandResponse.wasCommand) {
             commands[seekCommandResponse.index].lastData = dataObj;
