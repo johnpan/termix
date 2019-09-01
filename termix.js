@@ -12,9 +12,11 @@
  * or change command's setting (ask)verification to 1 using /options special command
  */
 
-const termix_version = "0.3.0"; 
+const termix_version = "0.3.1"; 
 let    
     cmdElem = {},
+    importedElementsIDs = [], 
+    importedCommandsNames = [],
     previousCommand = '',
     _history = [],
     historyPointer = -1,
@@ -424,9 +426,8 @@ let
             command: '/help',
             commandKey: '/h',
             method: () => {
-                // outputs a list of special commands
-                // todo: get help text from all special commands, first line for each
-                log(1, "should show a list of special commands (todo!)");
+                // todo: get help text from all commands, first line for each
+                log(1, "should show a list of commands (todo!)");
             }
         }
     ]
@@ -444,12 +445,11 @@ const
         ignoreParse: 0
     },
     domElementModel = { 
-        dynamicSelect: '',
+        domElement: null,   // this is the static real dom element
+        dynamicSelect: '',  // this is the query to eval to get the element
         termixId: ''
     },
     retrieveElement = (elemName, getStored=true) => {
-        // ensure first! check if element exists, could have been removed. 
-        // Try again with dynamicSelect if not found
         let _model = domElements.find (el => el.termixId == elemName),
             _el = null;
         if (_model) {
@@ -457,18 +457,28 @@ const
         }
         return _el;
     },
-    importElement = (domElementObj) => {
-        if (domElementObj.domElement || domElementObj.dynamicSelect) {
-            // do not push if termixId not unique
-            if (pushObjectIfUniqueProp(domElements, domElementObj, 'termixId')) {
-                return `success: ${domElementObj.termixId}`; 
-            }
-            else {
-                return `FAIL: termixId duplicate: ${domElementObj.termixId}`;   
-            }            
-        } else {
-            return `FAIL: element not found: ${domElementObj.termixId}`;   
+    importElement = (domElementObj, allowOverwrite=false) => {
+        // do not bother if incoming object is bad
+        if (!domElementObj.domElement && !domElementObj.dynamicSelect) {
+            return `FAIL: object not valid for: ${domElementObj.termixId}`;   
         }
+        if (
+            (!allowOverwrite && 
+            pushObjectIfUniqueProp(domElements, domElementObj, 'termixId')) 
+            ||
+            (allowOverwrite && 
+            replaceObjectInArray(domElements, domElementObj, 'termixId'))
+            ||
+            (allowOverwrite && 
+            domElements.push(domElementObj))
+           )
+        {     
+            // import is done by condition statement!
+            // store the imported id in array
+            importedElementsIDs.push(domElementObj.termixId);
+            return `success: ${domElementObj.termixId}`; 
+        }           
+        return `FAIL: termixId duplicate: ${domElementObj.termixId}`;  
     }, 
     findCommand = (word0, seekArr) => {
         let wasCommand = true;
@@ -506,13 +516,20 @@ const
         });
         if (commandFound > -1 && !allowOverwrite) {
             return `FAIL: command ${commandObj.command}/${commandObj.commandKey} cannot be imported, another command uses these keys`
-        } else if (commandFound > -1) {
-            // overwrite command
-            commands[commandFound] = Object.assign({}, commandModel, commandObj);
-            return `success overwrite: command ${commandObj.command}/${commandObj.commandKey||"-"}`
         } else {
-            commands.push (Object.assign({}, commandModel, commandObj));
-            return `success: command ${commandObj.command}/${commandObj.commandKey||"-"}`
+            // going to be added, so update the array of imported commands
+            importedCommandsNames.push({
+                commandKey: commandObj.commandKey,
+                command: commandObj.command
+            });
+            if (commandFound > -1) {
+                // overwrite command
+                commands[commandFound] = Object.assign({}, commandModel, commandObj);
+                return `success overwrite: command ${commandObj.command}/${commandObj.commandKey||"-"}`
+            } else {
+                commands.push (Object.assign({}, commandModel, commandObj));
+                return `success: command ${commandObj.command}/${commandObj.commandKey||"-"}`
+            }
         }
     },
     createDataObj = (commandObj, paramsLine) => {
@@ -655,7 +672,18 @@ const
         });
 		if (!found) arr.push(obj);
 		return !found;
-	},
+    },
+    replaceObjectInArray = (arr, obj, prop) => {
+        // replace an object in array using prop as id
+        let replaced = false;
+        arr.forEach( (item, i, _arr) => { 
+            if (item[prop] == obj[prop]) {
+                _arr[i] = obj;
+                replaced = true;
+            }
+        });
+        return replaced;
+    },
     setOutput = (txt, append=true) => {
         let preText = "";       
         preText = append ? cmdElem.value : "";
@@ -676,15 +704,12 @@ const
     },
     parseLine = (dataLine, keepInHistory=true) => {
         dataLine = dataLine.trim();
-        // if no text, do not keep in history
-        if (dataLine && keepInHistory) {
+        if (!dataLine) return;
+        if (keepInHistory) {
             // set historyPointer to -1
             historyPointer = -1;
             // keep line in History in zero index if not same as previous
             if (_history[0] != dataLine) _history.unshift(dataLine);
-        } else {
-            // plain enter was hit, nothing to do
-            return;
         }
         // trim spaces & get the first word to check if it is a command
         const spaced = dataLine.split(' ');
