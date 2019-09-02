@@ -652,8 +652,12 @@ const
     say = (...args) => {
         console.log("___termix: ", ...args);
     },
-    rnd = () => {
-        return (Math.random()+"").substr(-4); // wrap with Number() ?
+    rnd = (digits=4) => {
+        return (Math.random()+"").substr(-digits); // wrap with Number() ?
+    },
+    now = () => {
+        const d = new Date();
+        return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()} ${d.getHours()}:${d.getMinutes()}:${d.getSeconds()}`;
     },
     runEval = (str) => {
         return eval(str);
@@ -1011,18 +1015,20 @@ termix = {
     models: {
         domElementModel: domElementModel,
         commandModel: commandModel,
-    },    
-    retrieveElement: retrieveElement,
-    putPreviousData: putPreviousData,
-    importCommand: importCommand,
-    importElement: importElement,
-    htmlTemplate : htmlTemplate,
+    },
     dialog: setDialog,
-    run: handleEnter,
-    apply: apply,
+    run: handleEnter,  
+    retrieveElement,
+    putPreviousData,
+    importCommand,
+    importElement,
+    htmlTemplate, 
     cmd: cmdElem,
-    init: init,
-    rnd: rnd, 
+    apply,
+    init,
+    rnd,
+    now,
+    say,
     log: (what) => log(0, what),   
     version: () => termix_version,
     kill: () => handleEnter('/exit'),
