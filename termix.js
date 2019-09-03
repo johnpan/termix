@@ -47,7 +47,6 @@ let
         },
         {
             command: 'maps',
-            commandKey: 'maps',
             ignoreParse: 1,
             method: (dataLine) => {
                 let transactionWindow = window.open(
@@ -404,8 +403,10 @@ let
         },
         {
             command: '/commands',
-            method: () => {
-                log(0, commands.map( c => c.command ));
+            method: (dataObj) => {
+                // get a simple commands list
+                const arrToShow = (dataObj.special) ? specialCommands : commands;
+                log(0, arrToShow.map( c => `${c.command}(${c.commandKey||'-'})` ));
             }
         },
         {
