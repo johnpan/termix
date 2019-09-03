@@ -12,7 +12,7 @@
  * or change command's setting (ask)verification to 1 using /options special command
  */
 
-const termix_version = "0.3.2"; 
+const termix_version = "0.3.13"; 
 let    
     cmdElem = {},
     importedElementsIDs = [], 
@@ -1053,8 +1053,6 @@ termix = {
     version: () => termix_version,
     kill: () => handleEnter('/exit'),
     show: () => cmdElem.style.display = '',
-    
-    setOutput
 }
 
 // liberate / expose to window scope
