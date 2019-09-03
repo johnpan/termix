@@ -12,7 +12,7 @@
  * or change command's setting (ask)verification to 1 using /options special command
  */
 
-const termix_version = "0.3.1"; 
+const termix_version = "0.3.2"; 
 let    
     cmdElem = {},
     importedElementsIDs = [], 
@@ -291,23 +291,11 @@ let
             }
         },
         {
-            command: '/import-command',
-            help: `imports custom command`,
-            method: (dataObj) => {
-                // todo: eval method or wrap with window...
-                // sample should work: /import-command -command myFirstCom -commandKey mfc -verification 1 -merge-policy 2 -method termix.log
-    
-                return importCommand(dataObj);
-            }
-        },
-        {
             command: '/import-element',
             help: `imports dom element`,
             method: (dataObj) => {
-                // todo: eval method or wrap with window...
-                // sample should work: /import-element -selectCommand document.querySelectorAll(".ReactVirtualized__Table")[0] -elemName termixPlaceholder
-                       
-                return ensureElement(dataObj);
+                // sample: /import-element -dynamicSelect document.querySelector("#header") -termixId header
+                return importElement(dataObj, true);
             }
         },
         {
@@ -318,6 +306,8 @@ let
             }
         },
         {
+            /* eval works from inside parseLine method
+               this command is here for list purpose only */ 
             command: '/eval', 
             commandKey: '/e',       
             help: `runs pure js`
@@ -347,9 +337,9 @@ let
         {
             command: '/watchdog',
             commandKey: '/wd',
-            help: `runs a method per second`,
+            help: `runs a method per time interval`,
             method: () => {
-                // todo watcher per second run method
+                // todo watcher per interval run method
             }
         },
         {
@@ -394,9 +384,9 @@ let
             command: '/cached',
             help: `shows last command and its cached data`,
             method: () => {
-                log(0, `Cached command: ${previousCommand}`);
+                log(0, `Last command: ${previousCommand}`);
                 const commandObj = findCommandObj(previousCommand, commands);
-                log(0, `...with last data: ${JSON.stringify(commandObj.lastData)}`);
+                log(0, `...did run with data: ${JSON.stringify(commandObj.lastData)}`);
             }
         },
         {
@@ -425,9 +415,14 @@ let
         {
             command: '/help',
             commandKey: '/h',
-            method: () => {
-                // todo: get help text from all commands, first line for each
-                log(1, "should show a list of commands (todo!)");
+            method: (dataObj) => {
+                // get help text from all commands, first line for each
+                const arrToShow = (dataObj.special) ? specialCommands : commands;
+                arrToShow.map( c => {
+                    const _help = c.help ? c.help.split('\n')[0] : 'no help!',
+                          _key = c.commandKey ? `(or ${c.commandKey})` : '';
+                    log(0, `${c.command}${_key}: ${_help}`);
+                });
             }
         }
     ]
@@ -699,7 +694,14 @@ const
         cmdElem.value = restText + txt;       
     },
     getInput = () => {
-        return cmdElem.value.substr(cmdElem.value.lastIndexOf("\n")+1);      
+        let lastNonEmptyLine = '';
+        for (var t=0; t<100; t++) {
+            lastNonEmptyLine = cmdElem.value.substr(cmdElem.value.lastIndexOf("\n")+1);
+            if (lastNonEmptyLine != '') break;
+            // remove last line while empty, and retry
+            setOutput(cmdElem.value.substr(0, cmdElem.value.lastIndexOf("\n")),false)
+        }
+        return lastNonEmptyLine;      
     },
     getUnparsedLine = (dataLine) => {
         const spaced = dataLine.trim().split(' ');
@@ -1013,8 +1015,8 @@ let templateHTML = `
 
 termix = {
     models: {
-        domElementModel: domElementModel,
-        commandModel: commandModel,
+        domElementModel,
+        commandModel,
     },
     dialog: setDialog,
     run: handleEnter,  
