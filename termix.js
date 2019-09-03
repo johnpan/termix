@@ -690,7 +690,28 @@ const
         cmdElem.value = restText + txt;       
     },
     getInput = (autoRemoveBlank=true) => {
-        if (!autoRemoveBlank) return cmdElem.value.substr(cmdElem.value.lastIndexOf("\n")+1);
+        let lastLine = cmdElem.value.substr(cmdElem.value.lastIndexOf("\n")+1);
+        if (!autoRemoveBlank) return lastLine;
+
+        const 
+            linesToCursor = cmdElem.value.substr(0, cmdElem.selectionEnd).split("\n"),
+            cmdLength = cmdElem.value.split("\n").length,
+            cursorLineIndex = linesToCursor.length,
+            cursorLineText = linesToCursor.pop(),
+            isCursorAtLastLine = (cmdLength == cursorLineIndex)
+        ;
+
+        if (isCursorAtLastLine) {
+            return lastLine;
+        }
+
+        if (cursorLineText) {
+            // enter hit on a past line, let's execute that one
+            return cursorLineText;
+        }
+
+        /* special case: enter was hit in previous & empty line
+           return last not empty line & fix the output */
         let lastNonEmptyLine = '';
         for (var t=0; t<100; t++) {
             lastNonEmptyLine = cmdElem.value.substr(cmdElem.value.lastIndexOf("\n")+1);
@@ -698,7 +719,7 @@ const
             // remove last line while empty, and retry
             setOutput(cmdElem.value.substr(0, cmdElem.value.lastIndexOf("\n")),false)
         }
-        return lastNonEmptyLine;      
+        return lastNonEmptyLine;     
     },
     getUnparsedLine = (dataLine) => {
         const spaced = dataLine.trim().split(' ');
@@ -1022,12 +1043,12 @@ termix = {
     importCommand,
     importElement,
     htmlTemplate, 
-    cmd: cmdElem,
     apply,
     init,
     rnd,
     now,
     say,
+    getCmd: () => cmdElem,
     log: (what) => log(0, what),   
     version: () => termix_version,
     kill: () => handleEnter('/exit'),
