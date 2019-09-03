@@ -287,7 +287,10 @@ let
             commandKey: '/cp',
             help: `clones a command and gives it a new name`,
             method: (dataObj) => {
+                // /clone -command watch -new watch-sell
                 // this way the user will have a second lastData obj to use
+            
+            //todo
             }
         },
         {
@@ -313,17 +316,10 @@ let
             help: `runs pure js`
         },
         {
-            command: '/get',
-            help: `sends a GET request`,
+            command: '/curl',
+            help: `sends a GET/POST request`,
             method: () => {
                 // todo ajax get
-            }
-        },
-        {
-            command: '/post',
-            help: `sends a POST request`,
-            method: () => {
-                // todo ajax post
             }
         },
         {
@@ -607,9 +603,9 @@ const
             // pressed 'up' until first entry
             return;
         }
-        if (historyPointer===-1 && getInput()) { 
+        if (historyPointer===-1 && getInput(false)) { 
             // auto-save unfinished line in history               
-            _history.unshift(_line);
+            _history.unshift(getInput(false));
             historyPointer=0;
         }
         // insert line from history & set historyPointer
@@ -693,7 +689,8 @@ const
         const restText = cmdElem.value.substr(0, cmdElem.value.lastIndexOf("\n")+1);
         cmdElem.value = restText + txt;       
     },
-    getInput = () => {
+    getInput = (autoRemoveBlank=true) => {
+        if (!autoRemoveBlank) return cmdElem.value.substr(cmdElem.value.lastIndexOf("\n")+1);
         let lastNonEmptyLine = '';
         for (var t=0; t<100; t++) {
             lastNonEmptyLine = cmdElem.value.substr(cmdElem.value.lastIndexOf("\n")+1);
@@ -1035,6 +1032,8 @@ termix = {
     version: () => termix_version,
     kill: () => handleEnter('/exit'),
     show: () => cmdElem.style.display = '',
+    
+    setOutput
 }
 
 // liberate / expose to window scope
