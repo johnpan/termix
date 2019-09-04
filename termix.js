@@ -12,7 +12,7 @@
  * or change command's setting (ask)verification to 1 using /options special command
  */
 
-const termix_version = "0.3.13"; 
+const termix_version = "0.3.14"; 
 let    
     cmdElem = {},
     importedElementsIDs = [], 
@@ -651,6 +651,20 @@ const
         const d = new Date();
         return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()} ${d.getHours()}:${d.getMinutes()}:${d.getSeconds()}`;
     },
+    isObjectEqual = (o1, o2, ignorePropsArr=[]) => {
+        // Deep Clone objects
+        let _obj1 = JSON.parse(JSON.stringify(o1)),
+            _obj2 = JSON.parse(JSON.stringify(o2));
+        // Remove props to ignore
+        ignorePropsArr.map( p => { 
+            eval('_obj1.'+p+' = _obj2.'+p+' = "IGNORED"');
+        });
+        // compare as strings
+        let s1 = JSON.stringify(_obj1),
+            s2 = JSON.stringify(_obj2);
+        // return [s1==s2,s1,s2];
+        return s1==s2;
+    },
     runEval = (str) => {
         return eval(str);
     },
@@ -1043,7 +1057,8 @@ termix = {
     putPreviousData,
     importCommand,
     importElement,
-    htmlTemplate, 
+    isObjectEqual,
+    htmlTemplate,    
     apply,
     init,
     rnd,
