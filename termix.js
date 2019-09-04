@@ -12,7 +12,7 @@
  * or change command's setting (ask)verification to 1 using /options special command
  */
 
-const termix_version = "0.3.2"; 
+const termix_version = "0.3.14"; 
 let    
     cmdElem = {},
     importedElementsIDs = [], 
@@ -47,7 +47,6 @@ let
         },
         {
             command: 'maps',
-            commandKey: 'maps',
             ignoreParse: 1,
             method: (dataLine) => {
                 let transactionWindow = window.open(
@@ -287,7 +286,10 @@ let
             commandKey: '/cp',
             help: `clones a command and gives it a new name`,
             method: (dataObj) => {
+                // /clone -command watch -new watch-sell
                 // this way the user will have a second lastData obj to use
+            
+            //todo
             }
         },
         {
@@ -313,17 +315,10 @@ let
             help: `runs pure js`
         },
         {
-            command: '/get',
-            help: `sends a GET request`,
+            command: '/curl',
+            help: `sends a GET/POST request`,
             method: () => {
                 // todo ajax get
-            }
-        },
-        {
-            command: '/post',
-            help: `sends a POST request`,
-            method: () => {
-                // todo ajax post
             }
         },
         {
@@ -408,8 +403,10 @@ let
         },
         {
             command: '/commands',
-            method: () => {
-                log(0, commands.map( c => c.command ));
+            method: (dataObj) => {
+                // get a simple commands list
+                const arrToShow = (dataObj.special) ? specialCommands : commands;
+                log(0, arrToShow.map( c => `${c.command}(${c.commandKey||'-'})` ));
             }
         },
         {
@@ -607,9 +604,9 @@ const
             // pressed 'up' until first entry
             return;
         }
-        if (historyPointer===-1 && getInput()) { 
+        if (historyPointer===-1 && getInput(false)) { 
             // auto-save unfinished line in history               
-            _history.unshift(_line);
+            _history.unshift(getInput(false));
             historyPointer=0;
         }
         // insert line from history & set historyPointer
@@ -654,6 +651,20 @@ const
         const d = new Date();
         return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()} ${d.getHours()}:${d.getMinutes()}:${d.getSeconds()}`;
     },
+    isObjectEqual = (o1, o2, ignorePropsArr=[]) => {
+        // Deep Clone objects
+        let _obj1 = JSON.parse(JSON.stringify(o1)),
+            _obj2 = JSON.parse(JSON.stringify(o2));
+        // Remove props to ignore
+        ignorePropsArr.map( p => { 
+            eval('_obj1.'+p+' = _obj2.'+p+' = "IGNORED"');
+        });
+        // compare as strings
+        let s1 = JSON.stringify(_obj1),
+            s2 = JSON.stringify(_obj2);
+        // return [s1==s2,s1,s2];
+        return s1==s2;
+    },
     runEval = (str) => {
         return eval(str);
     },
@@ -693,7 +704,29 @@ const
         const restText = cmdElem.value.substr(0, cmdElem.value.lastIndexOf("\n")+1);
         cmdElem.value = restText + txt;       
     },
-    getInput = () => {
+    getInput = (autoRemoveBlank=true) => {
+        let lastLine = cmdElem.value.substr(cmdElem.value.lastIndexOf("\n")+1);
+        if (!autoRemoveBlank) return lastLine;
+
+        const 
+            linesToCursor = cmdElem.value.substr(0, cmdElem.selectionEnd).split("\n"),
+            cmdLength = cmdElem.value.split("\n").length,
+            cursorLineIndex = linesToCursor.length,
+            cursorLineText = linesToCursor.pop(),
+            isCursorAtLastLine = (cmdLength == cursorLineIndex)
+        ;
+
+        if (isCursorAtLastLine) {
+            return lastLine;
+        }
+
+        if (cursorLineText) {
+            // enter hit on a past line, let's execute that one
+            return cursorLineText;
+        }
+
+        /* special case: enter was hit in previous & empty line
+           return last not empty line & fix the output */
         let lastNonEmptyLine = '';
         for (var t=0; t<100; t++) {
             lastNonEmptyLine = cmdElem.value.substr(cmdElem.value.lastIndexOf("\n")+1);
@@ -701,7 +734,7 @@ const
             // remove last line while empty, and retry
             setOutput(cmdElem.value.substr(0, cmdElem.value.lastIndexOf("\n")),false)
         }
-        return lastNonEmptyLine;      
+        return lastNonEmptyLine;     
     },
     getUnparsedLine = (dataLine) => {
         const spaced = dataLine.trim().split(' ');
@@ -1024,13 +1057,14 @@ termix = {
     putPreviousData,
     importCommand,
     importElement,
-    htmlTemplate, 
-    cmd: cmdElem,
+    isObjectEqual,
+    htmlTemplate,    
     apply,
     init,
     rnd,
     now,
     say,
+    getCmd: () => cmdElem,
     log: (what) => log(0, what),   
     version: () => termix_version,
     kill: () => handleEnter('/exit'),

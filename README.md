@@ -18,7 +18,7 @@
    * Use `/eval` to `eval()` javascript (There is an option to allow this, type `/opts -allow-eval 1`)
    * Easy access to LocalStorage
    * XHR requests watcher: `/watch-net`
-   * GET & POST without jQuery 
+   * GET & POST without jQuery, curl syntax! 
    * Load scripts and use predefined slugs instead of full URLs: `/load jquery`
 
 ### Special commands
