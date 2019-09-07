@@ -12,7 +12,9 @@
  * or change command's setting (ask)verification to 1 using /options special command
  */
 
-const termix_version = "0.3.14"; 
+ // todo: when logging stringified params, replace /"
+ 
+const termix_version = "0.3.15"; 
 let    
     cmdElem = {},
     importedElementsIDs = [], 
@@ -1069,6 +1071,7 @@ termix = {
     version: () => termix_version,
     kill: () => handleEnter('/exit'),
     show: () => cmdElem.style.display = '',
+    findCommandObject: (commandName) => findCommandObj(commandName, commands),
 }
 
 // liberate / expose to window scope
