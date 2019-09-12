@@ -11,10 +11,8 @@
  * To check what would be parsed, add '-help' or 'help' according to the syntax you use at the eol
  * or change command's setting (ask)verification to 1 using /options special command
  */
-
- // todo: when logging stringified params, replace /"
  
-const termix_version = "0.3.15"; 
+const termix_version = "0.3.16"; 
 let    
     cmdElem = {},
     importedElementsIDs = [], 
@@ -849,7 +847,8 @@ const
         log(3, `command:${commandObj.command} dataObj:${JSON.stringify(dataObj, cautiousStringifier)}`);
         // show the response if any
         if (methodOutput) {
-            log(1, `'${commandObj.command}': ${JSON.stringify(methodOutput)}`);
+            // log(1, `'${commandObj.command}': ${JSON.stringify(methodOutput)}`);
+            log(1, `'${commandObj.command}': ${methodOutput}`);
         }          
     },
     apply = (commandName, params) => {
