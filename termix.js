@@ -12,7 +12,7 @@
  * or change command's setting (ask)verification to 1 using /options special command
  */
  
-const termix_version = "0.3.16"; 
+const termix_version = "0.3.17"; 
 let    
     cmdElem = {},
     importedElementsIDs = [], 
