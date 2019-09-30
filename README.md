@@ -2,24 +2,82 @@
 # termix - Terminal Experience
   This is a UI-command-line utility to help typing the less keystrokes possible.
   It can be useful when a single command has to be used a lot of times.
-  With this util the command can remember its parameters from previous invoke until they get changed.
+  Each command can remember its parameters from previous invoke until they get changed, or use default values.
   To check what would be parsed, add `-help` parameter to your command
   or change command's setting `askVerification` to 1
 
-### Bash syntax style, but remembers last command and merges params
-  
-   * `insert -text 'this is a bus route' -bus 123 -date 12-22-93 `
-   * `-text 'another bus, same date' -bus 327`
-
 ### Common features
 
+   * Bash syntax style
+   * Parameters merge from previous invoke or/and use default values
    * Use cmd dialogs to ease user importing command params
    * Use arrows to access commands history
-   * Use `/eval` to `eval()` javascript (There is an option to allow this, type `/opts -allow-eval 1`)
+   * Use `/eval` to `eval()` javascript 
    * Easy access to LocalStorage
    * XHR requests watcher: `/watch-net`
    * GET & POST without jQuery, curl syntax! 
    * Load scripts and use predefined slugs instead of full URLs: `/load jquery`
+
+### Bash syntax style
+Use a space-plus-dash to seperate params. Dash is not forbiden in values
+``` javascript
+insert -text this is a bus route -bus 123 -date 12-22-93
+ 'insert': inserted: {"text":"'this is a bus route'","bus":123,"gate":"AF-44"}
+```
+
+### Merging parameters
+Notice that `gate` param is added automatically
+``` javascript
+insert -text 'another bus' -bus 327
+ 'insert': inserted: {"text":"'another bus'","bus":327,"gate":"AF-44"}
+```
+
+### Default paremeters
+Default values added if not supplied. Notice `verb` and `created` params.
+``` javascript
+insert -who john -what great
+ 'insert': inserted: {"who":"john","verb":"is","what":"great","created":"2019-09-27"}
+```
+
+### Commands short name
+`insert` is setup to run also as `i`
+``` javascript
+i -bus 666 -date 1-1-2000
+ 'insert': inserted: {"date":"1-1-2000","bus":666,"date":"1-1-2000"}
+```
+
+### Eval
+(There is an option to allow this, type `/opts -allow-eval 1`)
+
+### Dialogs!
+Plus nested dialogs, used as promises.
+Nested dialog sample
+``` javascript
+termix.dialog([                    
+   { question: "Go on with other questions? (y/n)", keyName: "go_on", default: "y" }
+]).
+then( (answers) => {
+   if (answers.go_on == 'y') {
+      termix.dialog([                    
+         { question: "Like this one? (y/n)", keyName: "go", default: "n" }
+      ]). 
+      then( (answers) => {
+         if (answers.go == 'n') {
+            termix.log(`End of nested dialogs, thanks`);
+         } else {
+            termix.dialog([                    
+               { question: "Fancy an ice-cream? (y/n)", keyName: "go1", default: "y" },
+               { question: "Fancy an ice-skate? (y/n)", keyName: "go2", default: "y" },
+               { question: "Fancy an ice-rock? (y/n)", keyName: "go3", default: "y" }
+            ]). 
+            then( (answers) => { 
+               termix.log(`thanks`);
+            });
+         }
+      });
+   }
+});
+```
 
 ### Special commands
 
@@ -54,8 +112,6 @@
       }
    )
    ```
-
-### Dialogs!
 
 ### Available settings per command 
 
