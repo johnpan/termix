@@ -49,6 +49,7 @@ let
         },
         {
             command: 'maps',
+            help: 'opens a new queried google maps window',
             ignoreParse: 1,
             method: (dataLine) => {
                 let transactionWindow = window.open(
@@ -59,6 +60,7 @@ let
         },
         {
             command: 'google',
+            help: 'opens a new queried google window',
             commandKey: 'g',
             ignoreParse: 1,
             method: (dataLine) => {
@@ -418,7 +420,7 @@ let
                 // get help text from all commands, first line for each
                 const arrToShow = (dataObj.special) ? specialCommands : commands;
                 arrToShow.map( c => {
-                    const _help = c.help ? c.help.split('\n')[0] : 'no help!',
+                    const _help = c.help ? c.help.split('\n')[0] : 'no help available',
                           _key = c.commandKey ? `(or ${c.commandKey})` : '';
                     log(0, `${c.command}${_key}: ${_help}`);
                 });
@@ -437,7 +439,7 @@ const
         mergePolicy: 0,
         askVerification: 0,
         ignoreParse: 0,
-        lastData // auto-set, use as readonly
+        lastData: [] // auto-set, use as readonly
     },
     domElementModel = { 
         domElement: null,   // this is the static real dom element
