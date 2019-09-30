@@ -1,3 +1,5 @@
+// https://raw.githubusercontent.com/johnpan/termix/master/termix.js
+
 (function (window, termix) {
     if (termix) {
         console.log ('termix already loaded');
@@ -12,7 +14,7 @@
  * or change command's setting (ask)verification to 1 using /options special command
  */
  
-const termix_version = "0.3.17"; 
+const termix_version = "0.3.19"; 
 let    
     cmdElem = {},
     importedElementsIDs = [], 
@@ -40,10 +42,10 @@ let
                 who: 'joe',
                 verb: 'is',
                 what: 'awsome',
-                when: new Date().toJSON().slice(0,10)
+                created: new Date().toJSON().split("T")[1].split(".")[0]
             },               
             mergePolicy: 2,
-            askVerification: 1
+            askVerification: 0
         },
         {
             command: 'maps',
@@ -434,7 +436,8 @@ const
         help: ``, 
         mergePolicy: 0,
         askVerification: 0,
-        ignoreParse: 0
+        ignoreParse: 0,
+        lastData // auto-set, use as readonly
     },
     domElementModel = { 
         domElement: null,   // this is the static real dom element
@@ -487,9 +490,12 @@ const
             wasCommand: wasCommand
         }
     },
-    findCommandObj = (commandName, commandsArr) => {
+    findCommandObj = (commandName, commandsArr, useExposed=false) => {
         const seekCommandResponse = findCommand(commandName, commandsArr);
         if (seekCommandResponse.index===-1) return {};
+        // if the user asked for a command using termix.findCommandObject,
+        // then we should not return last command used demanded by name not found
+        if (useExposed && !seekCommandResponse.wasCommand) return null;
 
         const commandObj = commandsArr[seekCommandResponse.index];
         return commandObj;
@@ -615,7 +621,7 @@ const
     putPreviousData = (commandName, dataObj) => {
         // Normally, termix saves the lastData for which each command operated.
         // But sometimes we might need to alter that data after operation,
-        // i.e when se want to reset some params
+        // i.e when we want to reset some params
         const seekCommandResponse = findCommand(commandName, commands);
         if (seekCommandResponse.wasCommand) {
             commands[seekCommandResponse.index].lastData = dataObj;
@@ -1044,7 +1050,9 @@ const
 ; 
 
 let templateHTML = `
-<textarea id="termix" style="caret-color:red;width:100%;height:150px;background-color:black;color:olive;border:none;padding:1%;font:16px/20px consolas;">Termix v${termix_version}&#10;</textarea>
+<textarea id="termix" 
+style="caret-color:red;width:100%;height:150px;background-color:black;color:antiquewhite;border:none;padding:1%;font:16px/20px consolas;">
+Termix v${termix_version}&#10;</textarea>
 `;
 
 termix = {
@@ -1070,7 +1078,7 @@ termix = {
     version: () => termix_version,
     kill: () => handleEnter('/exit'),
     show: () => cmdElem.style.display = '',
-    findCommandObject: (commandName) => findCommandObj(commandName, commands),
+    findCommandObject: (commandName) => findCommandObj(commandName, commands, true),
 }
 
 // liberate / expose to window scope
