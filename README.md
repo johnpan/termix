@@ -13,7 +13,6 @@
    * Use cmd dialogs to ease user importing command params
    * Use arrows to access commands history
    * Use `/eval` to `eval()` javascript 
-   * Easy access to LocalStorage
    * XHR requests watcher: `/watch-net`
    * GET & POST without jQuery, curl syntax! 
    * Load scripts and use predefined slugs instead of full URLs: `/load jquery`

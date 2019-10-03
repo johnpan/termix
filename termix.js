@@ -418,7 +418,8 @@ let
             commandKey: '/h',
             method: (dataObj) => {
                 // get help text from all commands, first line for each
-                const arrToShow = (dataObj.special) ? specialCommands : commands;
+                const arrToShow = (dataObj.special || dataObj.specials) ? specialCommands : commands;
+                if (arrToShow == commands) log(0, `type /help -specials to see help for built-in commands`);
                 arrToShow.map( c => {
                     const _help = c.help ? c.help.split('\n')[0] : 'no help available',
                           _key = c.commandKey ? `(or ${c.commandKey})` : '';
