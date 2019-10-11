@@ -897,7 +897,9 @@ const
         } else {
             // if no param, look in domElements for the object named '__termixPlaceholder__'           
             el = retrieveElement('__termixPlaceholder__');
-            // if not found, use default placeholder
+            // if not found, look for default placeholder in DOM
+            if (!el) { el = document.querySelector("#__termixPlaceholder__"); }
+            // if still not found, use head
             if (!el) { el = document.head; }
         }
         if (el == null) {
