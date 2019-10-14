@@ -1,4 +1,5 @@
 // https://raw.githubusercontent.com/johnpan/termix/master/termix.js
+// //cdn.jsdelivr.net/gh/johnpan/termix/termix.js
 
 (function (window, termix) {
     if (termix) {
