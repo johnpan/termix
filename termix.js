@@ -15,7 +15,7 @@
  * or change command's setting (ask)verification to 1 using /options special command
  */
  
-const termix_version = "0.4.21"; 
+const termix_version = "0.4.22"; 
 let    
     cmdElem = {},
     importedElementsIDs = [], 
@@ -30,6 +30,7 @@ let
     useLastCommand = 1,    
     useEval = 1,
     domElements = [],
+    commandNotFoundHandler = null,
     commands = [
         {
             command: 'insert',
@@ -223,11 +224,15 @@ let
                     param: 'show',
                     action: (paramValue) => {       
                         const commandObj = findCommandObj(previousCommand, commands);
+                        if (previousCommand) {
                         log(0, `
                         Command: '${previousCommand}' settings: 
                          merge-policy: ${commandObj.mergePolicy}
                          verification: ${commandObj.askVerification}   
-                         ignore-parse: ${commandObj.ignoreParse}                       
+                         ignore-parse: ${commandObj.ignoreParse}    
+                        `);
+                        }
+                        log(0, `                                              
                         Global settings:
                          allow-eval: ${useEval}
                          log-level: ${logLevel}
@@ -780,23 +785,35 @@ const
               seekArr = isSpecial ? specialCommands:commands, 
               seekCommandResponse = findCommand(word0, seekArr)
         ;
+        if (seekCommandResponse.index===-1 && commandNotFoundHandler != null) {
+            // there is a handler set by user, so use that
+            try {
+                let response = commandNotFoundHandler(dataLine);
+                log(1, response);
+            } catch (err) {
+                log(0, err.message);
+            }
+            return;
+        }
         if (seekCommandResponse.index===-1 && !useEval) {
             log(0, `'${word0}': ${isSpecial?'special ':''}command not found. ${isSpecial?'':'"use-last-command" and "allow-eval" options are off, nothing to do!'}`);
             return;              
         }
+        let shouldEval = false;
+        if (seekCommandResponse.index===-1 && useEval) {
+            shouldEval = true;       
+        }
         // remove first word if it was a command 
         const paramsLine = dataLine.split(" ").splice(seekCommandResponse.wasCommand).join(" "); 
         const commandObj = seekArr[seekCommandResponse.index] || {};
-        const unparsedLine = getUnparsedLine(dataLine) || dataLine;
-        if (commandObj.command == '/eval' || (seekCommandResponse.index===-1 && useEval)) {
+        const unparsedLine = shouldEval ? dataLine : getUnparsedLine(dataLine);
+        if (commandObj.command == '/eval' || shouldEval) {
             // stop typical procedure and return eval
-            let evalReturn = '';
             try {
-                evalReturn = runEval(unparsedLine);
+                let evalReturn = runEval(unparsedLine);
                 log(1, evalReturn);
             } catch (err) {
-                evalReturn = err.message;
-                log(0, evalReturn);
+                log(0, err.message);
             }
             return;        
         }
@@ -1058,7 +1075,10 @@ const
         unverifiedParseData = parseData;
         cmdElem.removeEventListener('keydown', defaultListener);
         cmdElem.addEventListener('keydown', verifyListener);
-    } 
+    },
+    setCommandNotFoundHandler = (func) => {
+        commandNotFoundHandler = func;
+    }
 ; 
 
 let templateHTML = `
@@ -1072,6 +1092,7 @@ termix = {
         domElementModel,
         commandModel,
     },
+    setCommandNotFoundHandler,
     dialog: setDialog,
     run: handleEnter,  
     retrieveElement,
@@ -1079,21 +1100,21 @@ termix = {
     importCommand,
     importElement,
     isObjectEqual,
-    htmlTemplate,    
+    htmlTemplate,
     apply,
     init,
     rnd,
     now,
     say,
     getCmd: () => cmdElem,
-    log: (what) => log(0, what),   
+    log: (what) => log(0, what),
     version: () => termix_version,
     kill: () => handleEnter('/exit'),
     show: () => cmdElem.style.display = '',
     findCommandObject: (commandName) => findCommandObj(commandName, commands, true),
 }
 
-// liberate / expose to window scope
+// expose to window scope
 window.termix = termix;  
 
 }(window, window.termix));	
