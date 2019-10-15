@@ -769,6 +769,7 @@ const
         return spaced.join(' ');
     },
     parseLine = (dataLine, keepInHistory=true) => {
+        // parser priority: Command -> CommandNotFoundHandler -> Previous command -> Eval
         dataLine = dataLine.trim();
         if (!dataLine) return;
         if (keepInHistory) {
