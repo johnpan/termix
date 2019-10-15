@@ -15,7 +15,7 @@
  * or change command's setting (ask)verification to 1 using /options special command
  */
  
-const termix_version = "0.3.19"; 
+const termix_version = "0.3.20"; 
 let    
     cmdElem = {},
     importedElementsIDs = [], 
@@ -116,7 +116,6 @@ let
             commandKey: 'mors',
             help: `syntax sample: mors ..-. -.. .-- --. ..--.`,
             ignoreParse: 1,
-            hidden: true,
             method: (dataLine) => {
                 const                 
                     signal = dataLine,
@@ -290,6 +289,7 @@ let
         {
             command: '/clone',
             commandKey: '/cp',
+            hidden: true,
             help: `clones a command and gives it a new name`,
             method: (dataObj) => {
                 // /clone -command watch -new watch-sell
@@ -323,6 +323,7 @@ let
         {
             command: '/curl',
             help: `sends a GET/POST request`,
+            hidden: true,
             method: () => {
                 // todo ajax get
             }
@@ -331,6 +332,7 @@ let
             command: '/watch-net',
             commandKey: '/w',
             help: `logs all xhr requests`,
+            hidden: true,
             method: () => {
                 // todo requests watcher
             }
@@ -339,6 +341,7 @@ let
             command: '/watchdog',
             commandKey: '/wd',
             help: `runs a method per time interval`,
+            hidden: true,
             method: () => {
                 // todo watcher per interval run method
             }
@@ -346,6 +349,7 @@ let
         {
             command: '/storage',
             commandKey: '/store',
+            hidden: true,
             help: `gets, sets, and removes from LocalStorage or/and SessionStorage`,
             method: () => {
                 // todo local storage get, set, remove
