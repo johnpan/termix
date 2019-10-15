@@ -116,6 +116,7 @@ let
             commandKey: 'mors',
             help: `syntax sample: mors ..-. -.. .-- --. ..--.`,
             ignoreParse: 1,
+            hidden: true,
             method: (dataLine) => {
                 const                 
                     signal = dataLine,
@@ -408,15 +409,19 @@ let
         },
         {
             command: '/commands',
+            help: `show a brief list of commands`,
             method: (dataObj) => {
                 // get a simple commands list
                 const arrToShow = (dataObj.special) ? specialCommands : commands;
-                log(0, arrToShow.map( c => `${c.command}(${c.commandKey||'-'})` ));
+                arrToShow.map( c => {
+                    if (!c.hidden) log(0, `${c.command}(${c.commandKey||'-'})`);
+                });                
             }
         },
         {
             command: '/help',
             commandKey: '/h',
+            help: `shows help text, first line for each command. Type [command] -help for the full help of the command`,
             method: (dataObj) => {
                 // get help text from all commands, first line for each
                 const arrToShow = (dataObj.special || dataObj.specials) ? specialCommands : commands;
@@ -424,7 +429,7 @@ let
                 arrToShow.map( c => {
                     const _help = c.help ? c.help.split('\n')[0] : 'no help available',
                           _key = c.commandKey ? `(or ${c.commandKey})` : '';
-                    log(0, `${c.command}${_key}: ${_help}`);
+                    if (!c.hidden) log(0, `${c.command}${_key}: ${_help}`);
                 });
             }
         }
@@ -441,6 +446,7 @@ const
         mergePolicy: 0,
         askVerification: 0,
         ignoreParse: 0,
+        hidden: false, // will be omited from commands list
         lastData: [] // auto-set, use as readonly
     },
     domElementModel = { 
