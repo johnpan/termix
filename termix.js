@@ -15,7 +15,7 @@
  * or change command's setting (ask)verification to 1 using /options special command
  */
  
-const termix_version = "0.3.20"; 
+const termix_version = "0.4.21"; 
 let    
     cmdElem = {},
     importedElementsIDs = [], 
@@ -27,8 +27,8 @@ let
     dialogData = [],
     dialogPromiser = {isBusy: false, forceBreak:false},
     logLevel = 1,
-    allowEval = 0,
-    useLastCommand = 0,
+    useLastCommand = 1,    
+    useEval = 1,
     domElements = [],
     commands = [
         {
@@ -215,7 +215,7 @@ let
                 {
                     param: 'allow-eval',
                     action: (paramValue) => {
-                        allowEval = Number(paramValue);
+                        useEval = Number(paramValue);
                         log(1, 'allow-eval changed to '+paramValue);
                     }
                 },
@@ -229,7 +229,7 @@ let
                          verification: ${commandObj.askVerification}   
                          ignore-parse: ${commandObj.ignoreParse}                       
                         Global settings:
-                         allow-eval: ${allowEval}
+                         allow-eval: ${useEval}
                          log-level: ${logLevel}
                          use-last-command: ${useLastCommand}`);
                     }
@@ -548,7 +548,7 @@ const
         const bashSyntax = paramsLine.charAt(0)==='-' || !paramsLine;
         if (!bashSyntax) {
             return {
-                errMsg: `Non-bash syntax is not supported beyond version 0.3.x`
+                errMsg: `Use a dash " -" before each param and a space between each param and its value.`
             } 
         }
         let dataObj = {};
@@ -780,31 +780,25 @@ const
               seekArr = isSpecial ? specialCommands:commands, 
               seekCommandResponse = findCommand(word0, seekArr)
         ;
-        if (seekCommandResponse.index===-1) {
-            log(0, `'${word0}': ${isSpecial?'special ':''}command not found. ${isSpecial?'':'Previous command not available.'}`);
+        if (seekCommandResponse.index===-1 && !useEval) {
+            log(0, `'${word0}': ${isSpecial?'special ':''}command not found. ${isSpecial?'':'"use-last-command" and "allow-eval" options are off, nothing to do!'}`);
             return;              
         }
         // remove first word if it was a command 
         const paramsLine = dataLine.split(" ").splice(seekCommandResponse.wasCommand).join(" "); 
-        const commandObj = seekArr[seekCommandResponse.index];
-        const unparsedLine = getUnparsedLine(dataLine);
-        if (commandObj.command == '/eval') {
+        const commandObj = seekArr[seekCommandResponse.index] || {};
+        const unparsedLine = getUnparsedLine(dataLine) || dataLine;
+        if (commandObj.command == '/eval' || (seekCommandResponse.index===-1 && useEval)) {
             // stop typical procedure and return eval
-            // if (allowEval) {
-                // remove /eval from data line and evaluate
-                let evalReturn = '';
-                try {
-                    evalReturn = runEval(unparsedLine);
-                    log(1, evalReturn);
-                } catch (err) {
-                    evalReturn = err.message;
-                    log(0, evalReturn);
-                }
-                return;
-            // } else {
-            //     log(0, `'allow-eval' setting is off. Use /opts to change it`);
-            //     return; 
-            // }
+            let evalReturn = '';
+            try {
+                evalReturn = runEval(unparsedLine);
+                log(1, evalReturn);
+            } catch (err) {
+                evalReturn = err.message;
+                log(0, evalReturn);
+            }
+            return;        
         }
         // create dataObj (plain object, not json) from params string
         let dataObj = commandObj.ignoreParse ?
@@ -852,7 +846,7 @@ const
                 methodOutput = commandObj.method(dataObj);
             }
             else {
-                log(0, `'${commandObj.command}': no action nor method found to run`);
+                log(0, `'${commandObj.command}': no action nor method found to run. Add " -help" to get help`);
                 return;
             }  
         } else {
