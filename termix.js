@@ -649,7 +649,10 @@ const
             log(0, _url.split('/').pop()+' loaded\n');
         };
         document.head.appendChild(tag);
-    },    
+    },
+    type = (what) => {
+        // todo: show messages progressively as been typed by the machine!
+    },
     log = (level, ...args) => {
         if (isNaN(level)) {
             // warning for the developer
@@ -682,7 +685,6 @@ const
         // compare as strings
         let s1 = JSON.stringify(_obj1),
             s2 = JSON.stringify(_obj2);
-        // return [s1==s2,s1,s2];
         return s1==s2;
     },
     runEval = (str) => {
@@ -788,7 +790,7 @@ const
         const unparsedLine = getUnparsedLine(dataLine);
         if (commandObj.command == '/eval') {
             // stop typical procedure and return eval
-            if (allowEval) {
+            // if (allowEval) {
                 // remove /eval from data line and evaluate
                 let evalReturn = '';
                 try {
@@ -799,10 +801,10 @@ const
                     log(0, evalReturn);
                 }
                 return;
-            } else {
-                log(0, `'allow-eval' setting is off. Use /opts to change it`);
-                return; 
-            }
+            // } else {
+            //     log(0, `'allow-eval' setting is off. Use /opts to change it`);
+            //     return; 
+            // }
         }
         // create dataObj (plain object, not json) from params string
         let dataObj = commandObj.ignoreParse ?
@@ -824,10 +826,10 @@ const
             return;
         }
         return {
-            commandObj : commandObj,
-            dataObj : dataObj,
-            seekArr : seekArr,
-            isSpecial : isSpecial,
+            commandObj,
+            dataObj,
+            seekArr ,
+            isSpecial,
             commandIndex : seekCommandResponse.index,
         };        
     },
