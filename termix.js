@@ -15,7 +15,7 @@
  * or change command's setting (ask)verification to 1 using /options special command
  */
  
-const termix_version = "0.3.19"; 
+const termix_version = "0.4.22"; 
 let    
     cmdElem = {},
     importedElementsIDs = [], 
@@ -27,9 +27,10 @@ let
     dialogData = [],
     dialogPromiser = {isBusy: false, forceBreak:false},
     logLevel = 1,
-    allowEval = 0,
-    useLastCommand = 0,
+    useLastCommand = 1,    
+    useEval = 1,
     domElements = [],
+    commandNotFoundHandler = null,
     commands = [
         {
             command: 'insert',
@@ -215,7 +216,7 @@ let
                 {
                     param: 'allow-eval',
                     action: (paramValue) => {
-                        allowEval = Number(paramValue);
+                        useEval = Number(paramValue);
                         log(1, 'allow-eval changed to '+paramValue);
                     }
                 },
@@ -223,13 +224,17 @@ let
                     param: 'show',
                     action: (paramValue) => {       
                         const commandObj = findCommandObj(previousCommand, commands);
+                        if (previousCommand) {
                         log(0, `
                         Command: '${previousCommand}' settings: 
                          merge-policy: ${commandObj.mergePolicy}
                          verification: ${commandObj.askVerification}   
-                         ignore-parse: ${commandObj.ignoreParse}                       
+                         ignore-parse: ${commandObj.ignoreParse}    
+                        `);
+                        }
+                        log(0, `                                              
                         Global settings:
-                         allow-eval: ${allowEval}
+                         allow-eval: ${useEval}
                          log-level: ${logLevel}
                          use-last-command: ${useLastCommand}`);
                     }
@@ -289,6 +294,7 @@ let
         {
             command: '/clone',
             commandKey: '/cp',
+            hidden: true,
             help: `clones a command and gives it a new name`,
             method: (dataObj) => {
                 // /clone -command watch -new watch-sell
@@ -322,6 +328,7 @@ let
         {
             command: '/curl',
             help: `sends a GET/POST request`,
+            hidden: true,
             method: () => {
                 // todo ajax get
             }
@@ -330,6 +337,7 @@ let
             command: '/watch-net',
             commandKey: '/w',
             help: `logs all xhr requests`,
+            hidden: true,
             method: () => {
                 // todo requests watcher
             }
@@ -338,6 +346,7 @@ let
             command: '/watchdog',
             commandKey: '/wd',
             help: `runs a method per time interval`,
+            hidden: true,
             method: () => {
                 // todo watcher per interval run method
             }
@@ -345,6 +354,7 @@ let
         {
             command: '/storage',
             commandKey: '/store',
+            hidden: true,
             help: `gets, sets, and removes from LocalStorage or/and SessionStorage`,
             method: () => {
                 // todo local storage get, set, remove
@@ -408,15 +418,19 @@ let
         },
         {
             command: '/commands',
+            help: `show a brief list of commands`,
             method: (dataObj) => {
                 // get a simple commands list
                 const arrToShow = (dataObj.special) ? specialCommands : commands;
-                log(0, arrToShow.map( c => `${c.command}(${c.commandKey||'-'})` ));
+                arrToShow.map( c => {
+                    if (!c.hidden) log(0, `${c.command}(${c.commandKey||'-'})`);
+                });                
             }
         },
         {
             command: '/help',
             commandKey: '/h',
+            help: `shows help text, first line for each command. Type [command] -help for the full help of the command`,
             method: (dataObj) => {
                 // get help text from all commands, first line for each
                 const arrToShow = (dataObj.special || dataObj.specials) ? specialCommands : commands;
@@ -424,7 +438,7 @@ let
                 arrToShow.map( c => {
                     const _help = c.help ? c.help.split('\n')[0] : 'no help available',
                           _key = c.commandKey ? `(or ${c.commandKey})` : '';
-                    log(0, `${c.command}${_key}: ${_help}`);
+                    if (!c.hidden) log(0, `${c.command}${_key}: ${_help}`);
                 });
             }
         }
@@ -441,6 +455,7 @@ const
         mergePolicy: 0,
         askVerification: 0,
         ignoreParse: 0,
+        hidden: false, // will be omited from commands list
         lastData: [] // auto-set, use as readonly
     },
     domElementModel = { 
@@ -538,7 +553,7 @@ const
         const bashSyntax = paramsLine.charAt(0)==='-' || !paramsLine;
         if (!bashSyntax) {
             return {
-                errMsg: `Non-bash syntax is not supported beyond version 0.3.x`
+                errMsg: `Use a dash " -" before each param and a space between each param and its value.`
             } 
         }
         let dataObj = {};
@@ -639,7 +654,10 @@ const
             log(0, _url.split('/').pop()+' loaded\n');
         };
         document.head.appendChild(tag);
-    },    
+    },
+    type = (what) => {
+        // todo: show messages progressively as been typed by the machine!
+    },
     log = (level, ...args) => {
         if (isNaN(level)) {
             // warning for the developer
@@ -672,7 +690,6 @@ const
         // compare as strings
         let s1 = JSON.stringify(_obj1),
             s2 = JSON.stringify(_obj2);
-        // return [s1==s2,s1,s2];
         return s1==s2;
     },
     runEval = (str) => {
@@ -752,6 +769,7 @@ const
         return spaced.join(' ');
     },
     parseLine = (dataLine, keepInHistory=true) => {
+        // parser priority: Command -> CommandNotFoundHandler -> Previous command -> Eval
         dataLine = dataLine.trim();
         if (!dataLine) return;
         if (keepInHistory) {
@@ -768,31 +786,37 @@ const
               seekArr = isSpecial ? specialCommands:commands, 
               seekCommandResponse = findCommand(word0, seekArr)
         ;
-        if (seekCommandResponse.index===-1) {
-            log(0, `'${word0}': ${isSpecial?'special ':''}command not found. ${isSpecial?'':'Previous command not available.'}`);
+        if (seekCommandResponse.index===-1 && commandNotFoundHandler != null) {
+            // there is a handler set by user, so use that
+            try {
+                let response = commandNotFoundHandler(dataLine);
+                log(1, response);
+            } catch (err) {
+                log(0, err.message);
+            }
+            return;
+        }
+        if (seekCommandResponse.index===-1 && !useEval) {
+            log(0, `'${word0}': ${isSpecial?'special ':''}command not found. ${isSpecial?'':'"use-last-command" and "allow-eval" options are off, nothing to do!'}`);
             return;              
+        }
+        let shouldEval = false;
+        if (seekCommandResponse.index===-1 && useEval) {
+            shouldEval = true;       
         }
         // remove first word if it was a command 
         const paramsLine = dataLine.split(" ").splice(seekCommandResponse.wasCommand).join(" "); 
-        const commandObj = seekArr[seekCommandResponse.index];
-        const unparsedLine = getUnparsedLine(dataLine);
-        if (commandObj.command == '/eval') {
+        const commandObj = seekArr[seekCommandResponse.index] || {};
+        const unparsedLine = shouldEval ? dataLine : getUnparsedLine(dataLine);
+        if (commandObj.command == '/eval' || shouldEval) {
             // stop typical procedure and return eval
-            if (allowEval) {
-                // remove /eval from data line and evaluate
-                let evalReturn = '';
-                try {
-                    evalReturn = runEval(unparsedLine);
-                    log(1, evalReturn);
-                } catch (err) {
-                    evalReturn = err.message;
-                    log(0, evalReturn);
-                }
-                return;
-            } else {
-                log(0, `'allow-eval' setting is off. Use /opts to change it`);
-                return; 
+            try {
+                let evalReturn = runEval(unparsedLine);
+                log(1, evalReturn);
+            } catch (err) {
+                log(0, err.message);
             }
+            return;        
         }
         // create dataObj (plain object, not json) from params string
         let dataObj = commandObj.ignoreParse ?
@@ -814,10 +838,10 @@ const
             return;
         }
         return {
-            commandObj : commandObj,
-            dataObj : dataObj,
-            seekArr : seekArr,
-            isSpecial : isSpecial,
+            commandObj,
+            dataObj,
+            seekArr ,
+            isSpecial,
             commandIndex : seekCommandResponse.index,
         };        
     },
@@ -840,7 +864,7 @@ const
                 methodOutput = commandObj.method(dataObj);
             }
             else {
-                log(0, `'${commandObj.command}': no action nor method found to run`);
+                log(0, `'${commandObj.command}': no action nor method found to run. Add " -help" to get help`);
                 return;
             }  
         } else {
@@ -898,7 +922,9 @@ const
         } else {
             // if no param, look in domElements for the object named '__termixPlaceholder__'           
             el = retrieveElement('__termixPlaceholder__');
-            // if not found, use default placeholder
+            // if not found, look for default placeholder in DOM
+            if (!el) { el = document.querySelector("#__termixPlaceholder__"); }
+            // if still not found, use head
             if (!el) { el = document.head; }
         }
         if (el == null) {
@@ -1050,7 +1076,10 @@ const
         unverifiedParseData = parseData;
         cmdElem.removeEventListener('keydown', defaultListener);
         cmdElem.addEventListener('keydown', verifyListener);
-    } 
+    },
+    setCommandNotFoundHandler = (func) => {
+        commandNotFoundHandler = func;
+    }
 ; 
 
 let templateHTML = `
@@ -1064,6 +1093,7 @@ termix = {
         domElementModel,
         commandModel,
     },
+    setCommandNotFoundHandler,
     dialog: setDialog,
     run: handleEnter,  
     retrieveElement,
@@ -1071,21 +1101,21 @@ termix = {
     importCommand,
     importElement,
     isObjectEqual,
-    htmlTemplate,    
+    htmlTemplate,
     apply,
     init,
     rnd,
     now,
     say,
     getCmd: () => cmdElem,
-    log: (what) => log(0, what),   
+    log: (what) => log(0, what),
     version: () => termix_version,
     kill: () => handleEnter('/exit'),
     show: () => cmdElem.style.display = '',
     findCommandObject: (commandName) => findCommandObj(commandName, commands, true),
 }
 
-// liberate / expose to window scope
+// expose to window scope
 window.termix = termix;  
 
 }(window, window.termix));	
