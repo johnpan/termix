@@ -15,7 +15,7 @@
  * or change command's setting (ask)verification to 1 using /options special command
  */
  
-const termix_version = "0.4.22"; 
+const termix_version = "0.4.23"; 
 let    
     cmdElem = {},
     importedElementsIDs = [], 
@@ -421,10 +421,11 @@ let
             help: `show a brief list of commands`,
             method: (dataObj) => {
                 // get a simple commands list
-                const arrToShow = (dataObj.special) ? specialCommands : commands;
-                arrToShow.map( c => {
-                    if (!c.hidden) log(0, `${c.command}(${c.commandKey||'-'})`);
-                });                
+                const arrayOfInterest = (dataObj.special) ? specialCommands : commands;
+                arrToShow = arrayOfInterest.map( c => {
+                    if (!c.hidden) return (`${c.command}(${c.commandKey||'-'})`);
+                });
+                log(0, arrToShow.join(", "));
             }
         },
         {
@@ -815,6 +816,7 @@ const
                 log(1, evalReturn);
             } catch (err) {
                 log(0, err.message);
+                log(0, 'type "/help" to get termix help');
             }
             return;        
         }
